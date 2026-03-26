@@ -1,0 +1,817 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>State-tastic! 🗺️</title>
+<link href="https://fonts.googleapis.com/css2?family=Fredoka+One&family=Nunito:wght@400;600;700;800;900&display=swap" rel="stylesheet">
+<style>
+:root {
+  --bg:#0f1923; --panel:#1a2740; --card:#1e2f4a; --border:#2a3f5f;
+  --accent:#f7c948; --green:#3ddc84; --red:#ff5c5c; --blue:#4da6ff;
+  --text:#e8f0fe; --muted:#7a95bb;
+}
+*{box-sizing:border-box;margin:0;padding:0;}
+html,body{height:100%;overflow:hidden;}
+body{font-family:'Nunito',sans-serif;background:var(--bg);color:var(--text);display:flex;flex-direction:column;height:100vh;}
+
+/* HEADER */
+header{display:flex;align-items:center;gap:12px;padding:8px 16px;background:var(--panel);border-bottom:1px solid var(--border);flex-shrink:0;}
+header h1{font-family:'Fredoka One',cursive;font-size:1.35rem;color:var(--accent);white-space:nowrap;}
+.mode-toggle{display:flex;background:var(--bg);border-radius:30px;padding:3px;gap:3px;flex-shrink:0;}
+.mode-btn{padding:5px 16px;border:none;border-radius:28px;font-family:'Fredoka One',cursive;font-size:0.88rem;cursor:pointer;transition:all 0.2s;color:var(--muted);background:transparent;}
+.mode-btn.active{background:var(--accent);color:#0f1923;}
+.mode-btn:not(.active):hover{color:var(--text);}
+.prog-wrap{flex:1;height:9px;background:var(--border);border-radius:9px;overflow:hidden;}
+.prog-fill{height:100%;border-radius:9px;background:linear-gradient(90deg,var(--accent),#f39c12);transition:width 0.4s ease;width:0%;}
+#hdr-label{font-weight:800;font-size:0.8rem;color:var(--muted);white-space:nowrap;min-width:65px;text-align:right;}
+.hdr-btn{padding:6px 14px;border-radius:30px;font-family:'Fredoka One',cursive;font-size:0.85rem;cursor:pointer;white-space:nowrap;transition:all 0.15s;border:none;}
+#reset-btn{background:transparent;border:2px solid var(--border);color:var(--muted);display:none;}
+#reset-btn:hover{border-color:var(--red);color:var(--red);}
+#start-quiz-btn{background:var(--green);color:#0f1923;display:none;box-shadow:0 0 14px rgba(61,220,132,0.35);}
+#start-quiz-btn:hover{filter:brightness(1.1);}
+
+/* COOLDOWN */
+#cooldown-bar{display:none;align-items:center;justify-content:center;gap:8px;padding:6px 16px;background:#2a1800;border-bottom:1px solid #5a3800;font-family:'Fredoka One',cursive;font-size:0.85rem;color:var(--accent);flex-shrink:0;}
+#cd-timer{color:#ffb020;}
+
+/* LAYOUT */
+.main{display:flex;flex:1;overflow:hidden;}
+
+/* MAP */
+.map-area{flex:1;display:flex;align-items:center;justify-content:center;overflow:hidden;padding:8px;}
+#map-svg{width:100%;height:100%;}
+.state-path{stroke:#0d1520;stroke-width:0.7;transition:fill 0.18s;}
+.state-path.s-default{fill:#1e3a5f;cursor:pointer;}
+.state-path.s-default:hover{fill:#2d5580;}
+.state-path.s-visited{fill:#1a4a32;cursor:pointer;}
+.state-path.s-visited:hover{fill:#225a3a;}
+.state-path.s-active{fill:var(--accent);filter:drop-shadow(0 0 7px rgba(247,201,72,0.8));cursor:pointer;}
+.state-path.q-idle{fill:#1e3a5f;cursor:crosshair;}
+.state-path.q-idle:hover{fill:#2d5580;}
+.state-path.q-correct{fill:var(--green);filter:drop-shadow(0 0 6px rgba(61,220,132,0.8));cursor:crosshair;}
+.state-path.q-wrong{fill:var(--red);filter:drop-shadow(0 0 6px rgba(255,92,92,0.8));cursor:crosshair;}
+.state-path.q-revealed{fill:#1a4a32;cursor:crosshair;}
+.state-path.r-correct{fill:var(--green);cursor:default;}
+.state-path.r-wrong{fill:var(--red);cursor:default;}
+.state-path.r-idle{fill:#1e3a5f;cursor:default;}
+.state-label{font-family:'Nunito',sans-serif;font-size:11px;font-weight:900;fill:transparent;pointer-events:none;text-anchor:middle;dominant-baseline:central;transition:fill 0.25s;}
+.state-label.lbl-show{fill:rgba(255,255,255,0.88);}
+.state-label.lbl-active{fill:#0f1923;}
+
+/* PANEL */
+.panel{width:305px;flex-shrink:0;background:var(--panel);border-left:1px solid var(--border);display:flex;flex-direction:column;overflow:hidden;}
+
+/* LEARN */
+#lp-empty{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;text-align:center;padding:28px;gap:10px;color:var(--muted);}
+#lp-empty .ico{font-size:3rem;}
+#lp-empty h3{font-family:'Fredoka One',cursive;font-size:1.1rem;color:var(--text);}
+#lp-empty p{font-size:0.84rem;line-height:1.55;}
+#lp-info{display:none;flex-direction:column;height:100%;overflow-y:auto;padding:14px;gap:9px;}
+#lp-info::-webkit-scrollbar{width:4px;}
+#lp-info::-webkit-scrollbar-thumb{background:var(--border);border-radius:4px;}
+.lp-head{display:flex;align-items:center;gap:10px;}
+.lp-emoji{font-size:2.2rem;flex-shrink:0;}
+.lp-name{font-family:'Fredoka One',cursive;font-size:1.45rem;color:var(--accent);line-height:1;}
+.lp-region{font-size:0.75rem;color:var(--muted);font-weight:700;margin-top:2px;}
+
+/* Shape image */
+.shape-img-wrap{width:100%;aspect-ratio:4/3;border-radius:11px;overflow:hidden;background:#0f1923;display:flex;align-items:center;justify-content:center;position:relative;flex-shrink:0;}
+.shape-img-wrap img{width:100%;height:100%;object-fit:cover;border-radius:11px;transition:opacity 0.3s;}
+.shape-img-wrap .img-overlay{position:absolute;bottom:0;left:0;right:0;background:linear-gradient(transparent,rgba(0,0,0,0.7));padding:8px 10px;display:flex;align-items:center;justify-content:center;}
+.shape-img-wrap .img-nick{font-family:'Fredoka One',cursive;font-size:1rem;color:var(--accent);}
+.img-placeholder{font-size:2.5rem;}
+
+.info-box{border-radius:11px;padding:11px 13px;}
+.box-lbl{font-size:0.65rem;text-transform:uppercase;letter-spacing:.9px;font-weight:900;margin-bottom:5px;}
+.box-p{font-size:0.86rem;line-height:1.52;}
+.shape-box{background:#1a2c08;border-left:4px solid #6bcf3d;}
+.shape-box .box-lbl{color:#7ac04a;}
+.shape-box .box-p{color:#bce8a0;}
+.mem-box{background:#201800;border-left:4px solid var(--accent);}
+.mem-box .box-lbl{color:#c8a020;}
+.mem-box .box-p{color:#e8d890;}
+.fact-box{background:#0a1a2a;border-left:4px solid var(--blue);}
+.fact-box .box-lbl{color:#4a90d9;}
+.fact-box .box-p{color:#aac8ee;}
+.lp-nav{display:flex;gap:8px;margin-top:auto;padding-top:8px;flex-shrink:0;}
+.lp-nav button{flex:1;padding:9px;border:none;border-radius:9px;font-family:'Fredoka One',cursive;font-size:0.9rem;cursor:pointer;transition:filter .15s;}
+.lp-prev{background:var(--border);color:var(--muted);}
+.lp-prev:hover{filter:brightness(1.3);}
+.lp-next{background:var(--accent);color:#0f1923;}
+.lp-next:hover{filter:brightness(1.1);}
+
+/* QUIZ */
+#qp-wrap{display:none;flex-direction:column;height:100%;padding:14px;gap:9px;}
+.qp-head h2{font-family:'Fredoka One',cursive;font-size:1.25rem;color:var(--accent);}
+.qp-count{font-size:0.78rem;color:var(--muted);font-weight:700;}
+.qp-card{background:var(--card);border-radius:12px;padding:14px;}
+.qp-instr{font-size:0.72rem;color:var(--muted);font-weight:800;text-transform:uppercase;letter-spacing:.8px;margin-bottom:7px;}
+.qp-state-name{font-family:'Fredoka One',cursive;font-size:1.55rem;color:var(--text);line-height:1.1;}
+.qp-map-tip{text-align:center;padding:6px;background:var(--card);border-radius:8px;font-size:0.76rem;color:var(--muted);font-weight:700;}
+
+/* Hint button & reveal */
+#hint-btn{width:100%;padding:9px;border:2px dashed var(--border);border-radius:9px;background:transparent;font-family:'Fredoka One',cursive;font-size:0.88rem;color:var(--muted);cursor:pointer;transition:all 0.2s;text-align:center;}
+#hint-btn:hover{border-color:var(--accent);color:var(--accent);}
+#hint-reveal{display:none;border-radius:11px;overflow:hidden;flex-direction:column;gap:0;animation:fadeUp 0.3s ease;}
+@keyframes fadeUp{from{opacity:0;transform:translateY(6px)}to{opacity:1;transform:translateY(0)}}
+#hint-reveal .hint-img-wrap{width:100%;aspect-ratio:16/9;background:#0f1923;display:flex;align-items:center;justify-content:center;position:relative;overflow:hidden;}
+#hint-reveal .hint-img-wrap img{width:100%;height:100%;object-fit:cover;}
+#hint-reveal .hint-label{background:#201800;padding:8px 12px;font-family:'Fredoka One',cursive;font-size:1rem;color:var(--accent);text-align:center;}
+
+#qp-feedback{font-family:'Fredoka One',cursive;font-size:1rem;text-align:center;min-height:26px;}
+#qp-feedback.fb-c{color:var(--green);}
+#qp-feedback.fb-w{color:var(--red);}
+#qp-next{display:none;width:100%;padding:10px;border:none;border-radius:9px;background:var(--accent);color:#0f1923;font-family:'Fredoka One',cursive;font-size:0.93rem;cursor:pointer;transition:filter .15s;margin-top:auto;}
+#qp-next:hover{filter:brightness(1.1);}
+#qp-back{width:100%;padding:7px;border:2px solid var(--border);border-radius:9px;background:transparent;color:var(--muted);font-family:'Fredoka One',cursive;font-size:0.83rem;cursor:pointer;transition:all .15s;}
+#qp-back:hover{border-color:var(--accent);color:var(--accent);}
+
+/* RESULTS */
+#rp-wrap{display:none;flex-direction:column;height:100%;padding:14px;align-items:center;justify-content:center;gap:9px;text-align:center;}
+#rp-emoji{font-size:2.6rem;}
+#rp-title{font-family:'Fredoka One',cursive;font-size:1.45rem;color:var(--accent);}
+.rp-score{width:88px;height:88px;border-radius:50%;display:flex;flex-direction:column;align-items:center;justify-content:center;font-family:'Fredoka One',cursive;}
+.rp-sn{font-size:1.9rem;color:#fff;line-height:1;}
+.rp-sd{font-size:0.73rem;color:rgba(255,255,255,.65);}
+#rp-msg{font-size:0.84rem;color:var(--muted);line-height:1.5;max-width:240px;}
+.rp-missed{width:100%;text-align:left;}
+.rp-missed h4{font-family:'Fredoka One',cursive;font-size:0.86rem;color:var(--red);margin-bottom:6px;}
+.rp-chips{display:flex;flex-wrap:wrap;gap:5px;max-height:78px;overflow-y:auto;}
+.rp-chip{padding:3px 10px;border-radius:20px;font-size:0.74rem;font-weight:800;cursor:pointer;background:#2a1515;color:var(--red);border:1px solid #4a2222;transition:all .14s;}
+.rp-chip:hover{background:#3a2020;}
+.rp-btns{display:flex;flex-direction:column;gap:7px;width:100%;}
+.rp-btn{padding:9px;border:none;border-radius:9px;font-family:'Fredoka One',cursive;font-size:0.88rem;cursor:pointer;transition:filter .15s;}
+.rp-btn.primary{background:var(--accent);color:#0f1923;}
+.rp-btn.secondary{background:var(--border);color:var(--text);}
+.rp-btn:hover{filter:brightness(1.1);}
+.rp-btn:disabled{opacity:0.45;cursor:not-allowed;filter:none;}
+</style>
+</head>
+<body>
+
+<header>
+  <h1>🗺️ State-tastic!</h1>
+  <div class="mode-toggle">
+    <button class="mode-btn active" id="btn-learn" onclick="switchMode('learn')">📖 Learn</button>
+    <button class="mode-btn" id="btn-quiz" onclick="switchMode('quiz')">🎯 Quiz</button>
+  </div>
+  <div class="prog-wrap"><div class="prog-fill" id="prog-fill"></div></div>
+  <span id="hdr-label"></span>
+  <button class="hdr-btn" id="reset-btn" onclick="resetLearn()">↺ Reset</button>
+  <button class="hdr-btn" id="start-quiz-btn" onclick="launchQuiz()">Start Quiz! 🎯</button>
+</header>
+
+<div id="cooldown-bar">
+  <span>⏳ You went back to review — quiz unlocks in <strong id="cd-timer">5:00</strong> — use the time to study! 📖</span>
+</div>
+
+<div class="main">
+  <div class="map-area">
+    <svg id="map-svg" viewBox="0 0 960 600"></svg>
+  </div>
+
+  <div class="panel">
+
+    <!-- LEARN empty -->
+    <div id="lp-empty">
+      <div class="ico">👆</div>
+      <h3>Click any state!</h3>
+      <p>Each state looks like a real object — click one to see what it looks like and learn the trick to remember it!</p>
+      <p style="margin-top:10px;font-size:0.78rem;">Explore states, then hit <strong style="color:var(--accent)">Start Quiz!</strong></p>
+    </div>
+
+    <!-- LEARN info -->
+    <div id="lp-info">
+      <div class="lp-head">
+        <span id="lp-emoji" class="lp-emoji"></span>
+        <div>
+          <div id="lp-name" class="lp-name"></div>
+          <div id="lp-region" class="lp-region"></div>
+        </div>
+      </div>
+      <!-- Shape image -->
+      <div class="shape-img-wrap" id="lp-img-wrap">
+        <span class="img-placeholder" id="lp-img-placeholder">🔍</span>
+        <img id="lp-img" style="display:none;" alt="shape image"/>
+        <div class="img-overlay"><span id="lp-img-nick" class="img-nick"></span></div>
+      </div>
+      <div class="info-box shape-box">
+        <div class="box-lbl">👀 Shape Trick</div>
+        <div id="lp-shape" class="box-p"></div>
+      </div>
+      <div class="info-box mem-box">
+        <div class="box-lbl">🧠 Memory Trick</div>
+        <div id="lp-memory" class="box-p"></div>
+      </div>
+      <div class="info-box fact-box">
+        <div class="box-lbl">⚡ Wow Fact</div>
+        <div id="lp-fact" class="box-p"></div>
+      </div>
+      <div class="lp-nav">
+        <button class="lp-prev" onclick="navState(-1)">← Prev</button>
+        <button class="lp-next" onclick="navState(1)">Next →</button>
+      </div>
+    </div>
+
+    <!-- QUIZ -->
+    <div id="qp-wrap">
+      <div class="qp-head">
+        <h2>🎯 Find it on the Map!</h2>
+        <div class="qp-count" id="qp-count"></div>
+      </div>
+      <div class="qp-card">
+        <div class="qp-instr">👆 Click the correct state on the map</div>
+        <div id="qp-name" class="qp-state-name"></div>
+      </div>
+      <button id="hint-btn" onclick="showHint()">💡 Need a hint? Show the shape!</button>
+      <div id="hint-reveal">
+        <div class="hint-img-wrap">
+          <span id="hint-placeholder" style="font-size:2rem;">🔍</span>
+          <img id="hint-img" style="display:none;" alt="hint"/>
+        </div>
+        <div class="hint-label" id="hint-label"></div>
+      </div>
+      <div class="qp-map-tip">The map is your answer — click the state!</div>
+      <div id="qp-feedback"></div>
+      <button id="qp-next" onclick="nextQ()">Next State →</button>
+      <button id="qp-back" onclick="backToLearnFromQuiz()">📖 Go Back &amp; Study</button>
+    </div>
+
+    <!-- RESULTS -->
+    <div id="rp-wrap">
+      <div id="rp-emoji"></div>
+      <div id="rp-title"></div>
+      <div class="rp-score" id="rp-score">
+        <div class="rp-sn" id="rp-n"></div>
+        <div class="rp-sd" id="rp-d"></div>
+      </div>
+      <p id="rp-msg"></p>
+      <div class="rp-missed" id="rp-missed"></div>
+      <div class="rp-btns">
+        <button class="rp-btn primary" id="rp-retake" onclick="launchQuiz()">Play Again 🔄</button>
+        <button class="rp-btn secondary" onclick="backToLearnFromResults()">Study States 📖</button>
+      </div>
+    </div>
+
+  </div>
+</div>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/d3/7.8.5/d3.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/topojson/3.0.2/topojson.min.js"></script>
+<script>
+const STATES = [
+  { fips:'01', id:'AL', name:'Alabama',       region:'South',     emoji:'🚀',
+    shapeNick:'Granola Bar', imgQuery:'granola bar',
+    shape:'Alabama is tall and skinny — just like a granola bar standing up! At the very bottom there is a tiny bit that sticks out to the left toward the ocean.',
+    memory:'"ALA-bama — ALA! BAM! A rocket!" 🚀 NASA\'s rocket center is in Huntsville — ALA-BAM-A, the BAM is like a rocket BOOM!',
+    fact:'The U.S. Space & Rocket Center in Huntsville is the largest space museum in the world!' },
+  { fips:'02', id:'AK', name:'Alaska',         region:'West',      emoji:'🐻',
+    shapeNick:'Squished Mitten', imgQuery:'winter mitten glove',
+    shape:'Alaska looks like a big chunky mitten that someone sat on and squished flat! There is also a long skinny arm poking out to the left into the cold ocean.',
+    memory:'"A-LASK-a — the LAST big frontier!" The biggest state — not connected to the rest of the U.S. 🐻‍❄️',
+    fact:'Alaska is so big that if you laid it on top of the rest of the U.S., it would stretch from coast to coast!' },
+  { fips:'04', id:'AZ', name:'Arizona',        region:'Southwest', emoji:'🌵',
+    shapeNick:'Bitten Cracker', imgQuery:'square cracker',
+    shape:'Arizona looks like a square cracker with one corner bitten off! The top-left corner is missing where Utah and Nevada meet. Everything else is a pretty clean box shape.',
+    memory:'"AIR-izona" — the hot dry AIR! 🌵 The Grand Canyon is there — one of the biggest holes on Earth!',
+    fact:'The Grand Canyon is 277 miles long, up to 18 miles wide, and over a mile deep!' },
+  { fips:'05', id:'AR', name:'Arkansas',       region:'South',     emoji:'💎',
+    shapeNick:'Squishy Pillow', imgQuery:'soft throw pillow',
+    shape:'Arkansas looks like a rectangle that got squishy on one side — just like a pillow that got pushed in! The left edge wiggles because the Mississippi River curves along the border.',
+    memory:'"AR-kan-SAW" — the S is SILENT! 💎 They found diamonds there — ARK + SAW = Arkansas!',
+    fact:'Arkansas has the only diamond mine where regular people can dig and KEEP any diamonds they find!' },
+  { fips:'06', id:'CA', name:'California',     region:'West',      emoji:'🌴',
+    shapeNick:'Hot Dog Bun', imgQuery:'hot dog bun bread',
+    shape:'California looks like a long hot dog bun tipped on its side! It is tall and thin going up and down the coast, wider at the top and curving a little at the bottom.',
+    memory:'"CALI-fornia" sounds like "CALL me" — it always wants to be on camera 🎬. Beaches, mountains, deserts, AND Hollywood!',
+    fact:'California has more people than any other state — over 39 million people!' },
+  { fips:'08', id:'CO', name:'Colorado',       region:'West',      emoji:'⛷️',
+    shapeNick:'Perfect Rectangle', imgQuery:'perfect rectangle shape',
+    shape:'Colorado is a PERFECT rectangle — all four sides are perfectly straight lines! No bumps, no wiggles, no curves at all. Draw it with a ruler and it looks just right!',
+    memory:'"COLO-rado" — think COLORFUL! 🎨 Rocky Mountains, colorful autumn trees, and big red rocks!',
+    fact:'Colorado has more than 50 mountains over 14,000 feet tall!' },
+  { fips:'09', id:'CT', name:'Connecticut',    region:'Northeast', emoji:'⚓',
+    shapeNick:'Bread Slice', imgQuery:'single slice of bread',
+    shape:'Connecticut is tiny — about the size of one piece of bread! It is one of the smallest states, just a little rectangle tucked below Massachusetts.',
+    memory:'"CON-NECT-I-CUT" — the word CONNECT is hiding inside it! 🔗 The CT at the end is silent — say "kuh-NET-ih-cut".',
+    fact:'The first American-style hamburger was created and sold in Connecticut in 1900!' },
+  { fips:'10', id:'DE', name:'Delaware',       region:'Northeast', emoji:'🦅',
+    shapeNick:'Jelly Bean', imgQuery:'jelly bean candy',
+    shape:'Delaware is the tiniest state on the East Coast — shaped like a small jelly bean standing up! It is so small you could drive across it in less than an hour.',
+    memory:'"DELA-ware — are you AWARE Delaware is tiny?" 🔎 It was the VERY FIRST state to join the United States!',
+    fact:'Delaware was the first state to sign the Constitution on December 7, 1787!' },
+  { fips:'12', id:'FL', name:'Florida',        region:'South',     emoji:'🏖️',
+    shapeNick:'Pointing Finger', imgQuery:'pointing finger hand',
+    shape:'Florida looks like a long finger pointing down into the ocean! The wide part at the top is where most people live, and the narrow part sticks straight down toward Cuba.',
+    memory:'"FLORI-da" — the finger pointing to Cuba! 🐊 Theme parks! Beaches! Alligators!',
+    fact:'Florida gets more lightning strikes than any other state — the Lightning Capital of North America!' },
+  { fips:'13', id:'GA', name:'Georgia',        region:'South',     emoji:'🍑',
+    shapeNick:'Melting Ice Cube', imgQuery:'melting ice cube',
+    shape:'Georgia looks like a square ice cube that melted a little at the bottom-right corner! The top is wide and flat, but the bottom-right slopes inward and gets narrower.',
+    memory:'"GEOR-gia — GORGEOUS peach!" 🍑 Georgia = PEACHES! Coca-Cola was also invented in Atlanta!',
+    fact:'Coca-Cola was invented in Atlanta, Georgia in 1886!' },
+  { fips:'15', id:'HI', name:'Hawaii',         region:'West',      emoji:'🌺',
+    shapeNick:'Stepping Stones', imgQuery:'stepping stones path garden',
+    shape:'Hawaii is a curved chain of islands across the ocean — like stepping stones curving across the water! There are 8 main islands, each one a different blob shape.',
+    memory:'"Ha-WAH-ee — Ha, WOW-ee!" because it is SO beautiful! 🌺🌊 The only state made entirely of islands!',
+    fact:'Hawaii is still growing! Lava from volcanoes pours into the ocean and creates brand new land!' },
+  { fips:'16', id:'ID', name:'Idaho',          region:'West',      emoji:'🥔',
+    shapeNick:'Wooden Chair', imgQuery:'simple wooden chair',
+    shape:'Idaho looks like a chair! There is a tall skinny part at the top (the chair back) and it gets wider at the bottom (the seat). Like the letter L with a really long top!',
+    memory:'"I-DA-HO!" 🥔🤠 Idaho POTATOES are world famous. Picture a potato sitting in that chair!',
+    fact:'Idaho grows about one third of all the potatoes eaten in the United States!' },
+  { fips:'17', id:'IL', name:'Illinois',       region:'Midwest',   emoji:'🏙️',
+    shapeNick:'Tall Skinny Book', imgQuery:'tall thin book standing upright',
+    shape:'Illinois is long and skinny — like a tall narrow book standing up! It is thin going left to right but very long going up and down, a little wider near the top.',
+    memory:'"Ill-ih-NOY" — the S is silent and sneaky! Chicago is there with UNREAL deep dish pizza! 🍕',
+    fact:'Illinois is home to the very first skyscraper ever built, in Chicago in 1885!' },
+  { fips:'18', id:'IN', name:'Indiana',        region:'Midwest',   emoji:'🏎️',
+    shapeNick:'Door Wedge', imgQuery:'rubber door wedge stopper',
+    shape:'Indiana looks like a door wedge — a rectangle with one rounded lower corner scooped out. The top is flat and straight, but the bottom-left curves in where the Ohio River bends.',
+    memory:'"Indi-ANA" — like Indiana JONES! 🎩 INDY = Indianapolis = Indiana!',
+    fact:'The Indianapolis 500 is one of the most famous car races in the world!' },
+  { fips:'19', id:'IA', name:'Iowa',           region:'Midwest',   emoji:'🌽',
+    shapeNick:'Wobbly Square', imgQuery:'uneven wobbly square shape',
+    shape:'Iowa looks like a wobbly square — almost a rectangle but all four sides have bumps and curves because rivers form its borders. Like a square drawn with a shaky hand!',
+    memory:'"I-OW-a — I OWE ya a corn maze!" 🌽 Iowa grows SO much corn!',
+    fact:'Iowa grows enough corn in a year to circle the Earth more than 11 times!' },
+  { fips:'20', id:'KS', name:'Kansas',         region:'Midwest',   emoji:'🌪️',
+    shapeNick:'Saltine Cracker', imgQuery:'saltine cracker',
+    shape:'Kansas is almost a perfect rectangle — like a saltine cracker! It is SO close to a perfect box, with just one tiny nibble taken out of one corner.',
+    memory:'You KNOW Kansas — Dorothy from The Wizard of Oz! 🌈🐕 "There is no place like home — Home = KANSAS!"',
+    fact:'Kansas is almost exactly in the geographic center of the United States!' },
+  { fips:'21', id:'KY', name:'Kentucky',       region:'South',     emoji:'🍗',
+    shapeNick:'Chicken Leg', imgQuery:'fried chicken drumstick leg',
+    shape:'Kentucky looks like a CHICKEN LEG — Cason\'s trick! 🍗 The left side is wide and meaty, and it gets skinnier going right like the bone. Wide on the left, narrow on the right!',
+    memory:'"KEN-tucky FRIED CHICKEN!" 🍗 KFC was invented in Kentucky! Best shape trick ever!',
+    fact:'Kentucky has Mammoth Cave — the longest cave system in the world with over 400 miles of tunnels!' },
+  { fips:'22', id:'LA', name:'Louisiana',      region:'South',     emoji:'🎷',
+    shapeNick:'Cowboy Boot', imgQuery:'cowboy boot',
+    shape:'Louisiana looks like a COWBOY BOOT! The tall main part is the boot shaft, and a foot part sticks out to the right into the Gulf of Mexico. One of the most boot-shaped states on the whole map! 🥾',
+    memory:'"LOO-ee-zee-ANA" — named after King LOUIS of France. LOUIE playing jazz in New Orleans! 🎺',
+    fact:'New Orleans, Louisiana is actually below sea level — the city sits lower than the ocean around it!' },
+  { fips:'23', id:'ME', name:'Maine',          region:'Northeast', emoji:'🦞',
+    shapeNick:'Lobster Claw', imgQuery:'lobster claw',
+    shape:'Maine looks like a lobster claw! There is a big chunky part and a narrower bit that hooks down — just like a real claw. Perfect because Maine is famous for lobster! 🦞',
+    memory:'"MAINE" — it is the MAIN event! 🎉 The furthest northeast state. MAINE lobster is the MAIN dish!',
+    fact:'Maine catches about 90% of all the lobsters in the United States!' },
+  { fips:'24', id:'MD', name:'Maryland',       region:'Northeast', emoji:'🦀',
+    shapeNick:'Crab Claw', imgQuery:'blue crab claw',
+    shape:'Maryland looks like a crab claw reaching around Washington D.C.! It has a bumpy uneven shape, and the Chesapeake Bay cuts a big bite right into the middle. 🦀',
+    memory:'"MARY-land — MARY had a little CRAB!" 🦀 Maryland is super famous for blue crabs!',
+    fact:'Maryland blue crabs are so famous that crab cakes are the official state dish!' },
+  { fips:'25', id:'MA', name:'Massachusetts',  region:'Northeast', emoji:'🦞',
+    shapeNick:'Flexing Arm', imgQuery:'flexing arm muscle',
+    shape:'Massachusetts looks like a flexing arm pointing to the right! The main rectangle is the arm, and Cape Cod on the right curls under like a fist. Plus a few island dots nearby! 💪',
+    memory:'"MASSA-choo-SETS" — picture the Pilgrims landing at Plymouth Rock! 🪨 They landed right here!',
+    fact:'Harvard University in Massachusetts, founded in 1636, is the oldest university in the United States!' },
+  { fips:'26', id:'MI', name:'Michigan',       region:'Midwest',   emoji:'🚗',
+    shapeNick:'Mitten', imgQuery:'winter mitten single',
+    shape:'Michigan is the MITTEN STATE! The lower peninsula looks EXACTLY like a right-hand mitten. Hold up your own right hand — that is the lower peninsula! The upper part sits above like a little cap. 🧤',
+    memory:'"MICHI-gan — MITCH put on his MITTEN!" 🧤 Home of Detroit and cars! Hold up your right hand!',
+    fact:'Michigan is the only state made of two completely separate pieces of land!' },
+  { fips:'27', id:'MN', name:'Minnesota',      region:'Midwest',   emoji:'🏞️',
+    shapeNick:'Frying Pan', imgQuery:'frying pan skillet',
+    shape:'Minnesota looks like a frying pan with the handle on the right! The main state is the wide pan part, and the long strip going right along the Canadian border is the handle. 🍳',
+    memory:'"MINNE-sota" — MINNE sounds like MINI SODA! 🥤 Famous for 10,000 lakes — one giant splash zone!',
+    fact:'Minnesota really does have over 10,000 lakes — officially "The Land of 10,000 Lakes"!' },
+  { fips:'28', id:'MS', name:'Mississippi',    region:'South',     emoji:'🎸',
+    shapeNick:'Teapot', imgQuery:'classic teapot',
+    shape:'Mississippi looks like a teapot! It is narrow at the top, wider in the middle, and has a little spout piece at the bottom-right sticking out toward the ocean. 🫖',
+    memory:'Spelling trick: M-I-S-S-I-S-S-I-P-P-I! Sing it: "MISS-ISS-IPPI"! 🎵 1 M, 4 I\'s, 4 S\'s, 2 P\'s!',
+    fact:'The Mississippi River along the state\'s western border is the 2nd longest river in the United States!' },
+  { fips:'29', id:'MO', name:'Missouri',       region:'Midwest',   emoji:'🌉',
+    shapeNick:'Wobbly Square', imgQuery:'uneven wobbly square shape',
+    shape:'Missouri looks like a wobbly square — roughly a box, but all sides have bumps and wiggles from river borders. There is also a tiny extra piece dipping down at the bottom-left into Arkansas!',
+    memory:'"Miz-OOR-ee" — the MIGHTY Missouri River! St. Louis has the Gateway Arch — a shiny metal rainbow! 🌈',
+    fact:'The Gateway Arch in St. Louis is taller than the Statue of Liberty AND the Washington Monument!' },
+  { fips:'30', id:'MT', name:'Montana',        region:'West',      emoji:'🏔️',
+    shapeNick:'Frying Pan', imgQuery:'large frying pan skillet',
+    shape:'Montana looks like a big frying pan tilted slightly! It is like a rectangle with a huge bite taken out of the bottom-right corner where Wyoming and Idaho indent it. Enormous and mostly flat on top! 🍳',
+    memory:'"Montana" means MOUNTAIN in Spanish! ⛰️ A giant state sitting on top of Wyoming like a mountain hat!',
+    fact:'Montana is the 4th biggest state but has more cows than people!' },
+  { fips:'31', id:'NE', name:'Nebraska',       region:'Midwest',   emoji:'🌽',
+    shapeNick:'Lunchbox', imgQuery:'kids metal lunchbox',
+    shape:'Nebraska looks like a lunchbox with a long handle on the side! The big rectangle is the main state, and the long skinny strip going left is the panhandle — just like a lunchbox handle. 🍱',
+    memory:'"Nuh-BRASS-ka" — as flat as a brass plate! 🌽 Miles and miles of corn as far as you can see!',
+    fact:'Nebraska is SO flat that on a clear day you can actually see the curve of the Earth!' },
+  { fips:'32', id:'NV', name:'Nevada',         region:'West',      emoji:'🎰',
+    shapeNick:'Leaning Block', imgQuery:'wooden block leaning sideways',
+    shape:'Nevada looks like a rectangle that is leaning sideways! The top border goes diagonally, making it look like a slanted block. That diagonal top is where the Sierra Nevada mountains cut across the border. 📐',
+    memory:'"nuh-VAH-duh" — desert and neon lights! 🎰 The leaning top makes Nevada different from all the other box-shaped states!',
+    fact:'Las Vegas, Nevada only gets about 4 inches of rain per year!' },
+  { fips:'33', id:'NH', name:'New Hampshire',  region:'Northeast', emoji:'⛰️',
+    shapeNick:'Tooth', imgQuery:'single tooth cartoon',
+    shape:'New Hampshire looks like a tooth — skinny and tall, a little wider at the top and slightly narrower at the bottom. It sits between Vermont on the left and Maine on the right! 🦷',
+    memory:'"NEW HAMP-shire — like a NEW HAMSTER from a shire!" 🐹 Motto: "Live Free or Die" — the most intense motto ever!',
+    fact:'Mount Washington in New Hampshire once recorded the fastest wind on Earth\'s surface — 231 miles per hour!' },
+  { fips:'34', id:'NJ', name:'New Jersey',     region:'Northeast', emoji:'🏙️',
+    shapeNick:'Arrowhead', imgQuery:'stone arrowhead',
+    shape:'New Jersey looks like an arrowhead or a triangle — wide at the top and narrowing to a point at the bottom where Cape May sticks into the ocean. The right side is bumpy from the coastline! 🔺',
+    memory:'"NEW JER-sey — like needing a new jersey to wear!" 👕 Tiny but super packed with people!',
+    fact:'New Jersey has more people per square mile than any other state!' },
+  { fips:'35', id:'NM', name:'New Mexico',     region:'Southwest', emoji:'🌶️',
+    shapeNick:'Almost-Perfect Box', imgQuery:'cardboard box square',
+    shape:'New Mexico is almost a perfect rectangle — but not quite! There is a small notch cut into one corner where the border jogs. Very close to a pure box! 📦',
+    memory:'"NEW MEXICO — like Mexico but NEWER!" 😄 Desert, spicy food, and adobe houses everywhere!',
+    fact:'New Mexico has more scientists with advanced degrees per person than any other state!' },
+  { fips:'36', id:'NY', name:'New York',       region:'Northeast', emoji:'🗽',
+    shapeNick:'Pizza Slice', imgQuery:'pizza slice triangle',
+    shape:'New York looks like a slice of pizza! It is wider on the left and gets narrower going right. Long Island sticks out to the right like the pointy tip of the slice! 🍕',
+    memory:'"NEW YORK, NEW YORK — if you can make it there, you can make it anywhere!" 🗽 Statue of Liberty!',
+    fact:'New York City\'s subway has 472 stations — more than any other subway in the world!' },
+  { fips:'37', id:'NC', name:'North Carolina', region:'South',     emoji:'✈️',
+    shapeNick:'Chocolate Bar', imgQuery:'flat chocolate candy bar',
+    shape:'North Carolina looks like a long flat chocolate bar! It is very wide from left to right but very short from top to bottom — much wider than it is tall! 🍫',
+    memory:'"CAROL-ina" — think of CAROL singing up NORTH! 🎵 The Wright Brothers flew the FIRST AIRPLANE ever here!',
+    fact:'The Wright Brothers made the world\'s first airplane flight at Kitty Hawk, North Carolina in 1903!' },
+  { fips:'38', id:'ND', name:'North Dakota',   region:'Midwest',   emoji:'🌾',
+    shapeNick:'Bread Loaf', imgQuery:'bread loaf unsliced',
+    shape:'North Dakota looks like a bread loaf! Mostly rectangular but the top curves a tiny bit and the sides are not perfectly straight. It is the NORTH one of the two Dakotas — sitting on TOP! 🍞',
+    memory:'"NORTH is on TOP — just like on a map!" 🌾 "Dak-OAT-a" has OAT in it — oat and wheat fields everywhere!',
+    fact:'North Dakota grows more sunflowers than any other state!' },
+  { fips:'39', id:'OH', name:'Ohio',           region:'Midwest',   emoji:'🎓',
+    shapeNick:'Pennant Flag', imgQuery:'sports pennant flag triangle',
+    shape:'Ohio looks like a sports pennant flag! The right side is fairly straight but the left side swoops up toward Michigan, giving it that cool triangular flag shape — you can almost imagine it waving! 🏳️',
+    memory:'"OH-HI-OH — it says HI in the middle!" 👋 Wave hello to Ohio!',
+    fact:'More U.S. astronauts came from Ohio than any other state — including Neil Armstrong, first man on the moon!' },
+  { fips:'40', id:'OK', name:'Oklahoma',       region:'South',     emoji:'🤠',
+    shapeNick:'Frying Pan', imgQuery:'cast iron frying pan',
+    shape:'Oklahoma looks EXACTLY like a frying pan! The wide main body is the pan, and the narrow strip going left (the panhandle) is the HANDLE. Probably the most frying-pan-shaped state on the whole map! 🍳',
+    memory:'"OK-lahoma — OK like OKAY!" 🤠 Oklahoma literally looks like a frying pan. Pan + Tornadoes + Cowboys!',
+    fact:'Oklahoma gets more tornadoes per square mile than anywhere else on Earth!' },
+  { fips:'41', id:'OR', name:'Oregon',         region:'West',      emoji:'🌲',
+    shapeNick:'Cutting Board', imgQuery:'wooden cutting board rectangle',
+    shape:'Oregon looks like a wooden cutting board — mostly rectangular but with slightly curved edges on one side. It sits right above California on the left coast of the country! 🪵',
+    memory:'"ORE-gone" — gold miners went there for ORE and it was GONE! ⛏️ Right above California on the Pacific coast.',
+    fact:'Crater Lake in Oregon is the deepest lake in the United States!' },
+  { fips:'42', id:'PA', name:'Pennsylvania',   region:'Northeast', emoji:'🔔',
+    shapeNick:'Wide Brick', imgQuery:'wide flat brick',
+    shape:'Pennsylvania is a wide flat brick — much wider than it is tall! It is one of the most rectangle-shaped states on the East Coast, just a big wide box with slightly bumpy edges. 🧱',
+    memory:'"Penn-syl-VANIA — Penn like a PEN!" ✏️ William Penn founded it. The Liberty Bell is in Philadelphia!',
+    fact:'The Liberty Bell in Philadelphia has a famous crack — nobody knows exactly when or how it happened!' },
+  { fips:'44', id:'RI', name:'Rhode Island',   region:'Northeast', emoji:'🏝️',
+    shapeNick:'Postage Stamp', imgQuery:'postage stamp',
+    shape:'Rhode Island is about the size of a postage stamp compared to other states! It is SO small and nearly square, with a jagged right side where the bay cuts in. You almost need a magnifying glass to find it! 📮',
+    memory:'"RHODE Island — barely bigger than a road!" 🛣️ The TINIEST state in all of the USA!',
+    fact:'Rhode Island is so small that you could fit it inside Alaska over 425 times!' },
+  { fips:'45', id:'SC', name:'South Carolina', region:'South',     emoji:'🌴',
+    shapeNick:'Doorstop Wedge', imgQuery:'rubber door stop wedge',
+    shape:'South Carolina looks like a doorstop wedge — wide on the left side and narrowing to a point on the right toward the coast. Like a triangular slice cut off the corner of North Carolina! 📐',
+    memory:'"SOUTH Carolina — SOUTH means WARM, warm means PALM TREES!" 🌴 A palm tree is right on their flag!',
+    fact:'South Carolina has more than 2,500 miles of coastline when you count all the bays and inlets!' },
+  { fips:'46', id:'SD', name:'South Dakota',   region:'Midwest',   emoji:'🗿',
+    shapeNick:'Bread Loaf', imgQuery:'bread loaf unsliced',
+    shape:'South Dakota also looks like a bread loaf — almost the same as North Dakota above it! The south border is a little straighter. It is the SOUTH one of the two Dakotas — sitting on the BOTTOM! 🍞',
+    memory:'"SOUTH is on the BOTTOM." Famous for Mount Rushmore — four giant president faces carved into a mountain! 🗿',
+    fact:'Mount Rushmore took 14 years to carve and 400 workers helped blast it out of the mountain!' },
+  { fips:'47', id:'TN', name:'Tennessee',      region:'South',     emoji:'🎸',
+    shapeNick:'Lego Brick', imgQuery:'lego brick flat wide',
+    shape:'Tennessee looks like a long flat Lego brick! It is very wide from left to right but very narrow from top to bottom — like a rectangular brick that was stretched way out to the sides. 🧱',
+    memory:'"TENN-essee" — count: T-E-N-N-E-S-S-E-E! Nashville is the country music capital! 🤠🎸',
+    fact:'Tennessee is home to the most visited national park in the U.S. — Great Smoky Mountains!' },
+  { fips:'48', id:'TX', name:'Texas',          region:'South',     emoji:'⭐',
+    shapeNick:'Cowboy Hat', imgQuery:'cowboy hat',
+    shape:'Texas looks like a cowboy hat from the side! The flat top part is the hat brim, and the bottom curves and comes to a point like the front of the hat. It is HUGE — you really cannot miss it on the map! 🤠',
+    memory:'"Don\'t mess with TEXAS!" 🤠⭐ The second biggest state. Cowboys, longhorns, and the Lone Star!',
+    fact:'Texas is so big that driving straight across it takes longer than driving from Chicago to New York City!' },
+  { fips:'49', id:'UT', name:'Utah',           region:'West',      emoji:'🏜️',
+    shapeNick:'Snipped Box', imgQuery:'cardboard box with corner cut off scissors',
+    shape:'Utah is mostly a rectangle — but it has a notch cut out of the top-right corner, like someone snipped it with scissors! That right-angle step is where Colorado\'s border creates a unique shape. ✂️',
+    memory:'"YOU-tah — YOU gotta see those red rock canyons!" 🌄 That snipped corner makes Utah totally unique!',
+    fact:'The Great Salt Lake is so salty you can float in it without even trying!' },
+  { fips:'50', id:'VT', name:'Vermont',        region:'Northeast', emoji:'🍁',
+    shapeNick:'Cereal Box', imgQuery:'cereal box tall',
+    shape:'Vermont is tall and skinny like a cereal box standing up! It is narrow going left to right and taller going up and down. It sits between New York and New Hampshire like a thin slice in a sandwich. 🥣',
+    memory:'"VER-mont" — mont means MOUNTAIN in French! "VERY MOUNTAIN-y Vermont!" 🏔️🍁 Famous for maple syrup!',
+    fact:'Vermont makes more maple syrup than any other state — about 2 million gallons every year!' },
+  { fips:'51', id:'VA', name:'Virginia',       region:'South',     emoji:'🏛️',
+    shapeNick:'Flag Banner', imgQuery:'rectangular banner flag',
+    shape:'Virginia looks like a banner or flag! The right side is a big rectangle where most people live, and on the left it has wiggly mountain borders. There is also a strip that sticks up between Maryland on the northeast side. 🚩',
+    memory:'"VIR-gin-ia" — the original! 🏛️ Eight U.S. Presidents were born here — more than any other state!',
+    fact:'Virginia is called "the birthplace of presidents" — Washington, Jefferson, and Madison were all born there!' },
+  { fips:'53', id:'WA', name:'Washington',     region:'West',      emoji:'☕',
+    shapeNick:'Square With a Bite', imgQuery:'square with bite taken out corner',
+    shape:'Washington looks like a square with a small bite taken out of the bottom-left corner! It sits at the very top-left corner of the whole country. The bite is where the Columbia River curves along the border. 🟦',
+    memory:'"WASH-ington" — all that Pacific rain WASHES everything green! ☕ Top-left corner of the country!',
+    fact:'Washington state grows more apples than any other state — about 10 billion apples a year!' },
+  { fips:'54', id:'WV', name:'West Virginia',  region:'South',     emoji:'⛰️',
+    shapeNick:'Jumping Frog', imgQuery:'cartoon frog jumping',
+    shape:'West Virginia looks like a jumping frog! It has bumps and extensions going in different directions — a piece sticking up to the right and the main body spreading out. All those wiggly borders are mountain ranges! 🐸',
+    memory:'"WEST Virginia" — it broke off from Virginia to go WEST! 🎵 "Country Roads, Take Me Home" is about West Virginia!',
+    fact:'West Virginia is the only state formed by breaking away from another state during the Civil War!' },
+  { fips:'55', id:'WI', name:'Wisconsin',      region:'Midwest',   emoji:'🧀',
+    shapeNick:'Oven Mitt', imgQuery:'oven mitt kitchen glove',
+    shape:'Wisconsin looks like an oven mitt — similar to Michigan but wider and chunkier! The top has a bump sticking out like a thumb into Lake Michigan. Chunky oven mitt = Wisconsin! 🧤',
+    memory:'"Wis-CONsin — with CONstant cheese production!" 🧀 Like Michigan\'s chunkier cheese-making cousin!',
+    fact:'Wisconsin makes about 3 billion pounds of cheese every year — more than any other state!' },
+  { fips:'56', id:'WY', name:'Wyoming',        region:'West',      emoji:'🦬',
+    shapeNick:'Perfect Rectangle', imgQuery:'perfect rectangle shape',
+    shape:'Wyoming is the MOST PERFECT RECTANGLE of any state — even more perfect than Colorado! All four borders are perfectly straight lines. The most box-shaped state on the whole map! 📦',
+    memory:'"WHY-oming — WHY did they make it a perfect rectangle?" 🟫 SO rectangular that once you know, you never forget!',
+    fact:'Wyoming was the first place in the United States to let women vote, back in 1869!' },
+];
+
+const BY_ID   = Object.fromEntries(STATES.map(s => [s.id, s]));
+const BY_FIPS = Object.fromEntries(STATES.map(s => [s.fips, s]));
+
+// ══════════════════════════════════
+// APP STATE
+// ══════════════════════════════════
+let mode = 'learn';
+let activeId = null;
+let visitedIds = new Set();
+let quizList = [], qIdx = 0, score = 0, missedIds = [], qAnswered = false;
+const COOLDOWN = 300;
+let cdEnd = null, cdInt = null;
+
+// ══════════════════════════════════
+// IMAGE LOADING (Unsplash)
+// ══════════════════════════════════
+async function loadImage(query, imgEl, placeholder) {
+  imgEl.style.display = 'none';
+  if (placeholder) placeholder.style.display = 'block';
+  const url = `https://source.unsplash.com/400x300/?${encodeURIComponent(query)}`;
+  imgEl.onload  = () => { imgEl.style.display = 'block'; if(placeholder) placeholder.style.display='none'; };
+  imgEl.onerror = () => { imgEl.style.display = 'none';  if(placeholder) placeholder.style.display='block'; };
+  imgEl.src = url;
+}
+
+// ══════════════════════════════════
+// MAP
+// ══════════════════════════════════
+async function initMap() {
+  const us = await d3.json('https://cdn.jsdelivr.net/npm/us-atlas@3/states-10m.json');
+  const features = topojson.feature(us, us.objects.states).features;
+  const svg = d3.select('#map-svg');
+  const proj = d3.geoAlbersUsa().scale(1280).translate([480,300]);
+  const path = d3.geoPath().projection(proj);
+
+  svg.selectAll('path.state-path')
+    .data(features).enter().append('path')
+    .attr('class','state-path s-default')
+    .attr('id', d => { const s=stateOf(d); return s?'sp-'+s.id:null; })
+    .attr('d', path)
+    .on('click', function(e,d){ const s=stateOf(d); if(!s) return; if(mode==='learn') learnClick(s.id); else if(mode==='quiz') quizClick(s.id); })
+    .on('mouseenter', function(e,d){ const s=stateOf(d); if(!s||mode!=='learn'||s.id===activeId) return; d3.select(this).classed('s-default',!visitedIds.has(s.id)).classed('s-visited',visitedIds.has(s.id)); })
+    .on('mouseleave', function(e,d){ });
+
+  svg.selectAll('text.state-label')
+    .data(features).enter().append('text')
+    .attr('class','state-label')
+    .attr('id', d => { const s=stateOf(d); return s?'lbl-'+s.id:null; })
+    .attr('x', d => path.centroid(d)[0])
+    .attr('y', d => path.centroid(d)[1])
+    .text(d => { const s=stateOf(d); return s?s.id:''; });
+}
+function stateOf(d){ return BY_FIPS[String(d.id).padStart(2,'0')]; }
+
+// ══════════════════════════════════
+// MODE SWITCH
+// ══════════════════════════════════
+function switchMode(m){
+  if(m==='quiz'){ if(isCoolingDown()) return; launchQuiz(); }
+  else { if(mode==='quiz'||mode==='results') backToLearnFromQuiz(); else showLearn(); }
+}
+
+function showLearn(){
+  mode='learn';
+  document.getElementById('btn-learn').classList.add('active');
+  document.getElementById('btn-quiz').classList.remove('active');
+  document.getElementById('lp-empty').style.display = activeId?'none':'';
+  document.getElementById('lp-info').style.display  = activeId?'flex':'none';
+  document.getElementById('qp-wrap').style.display  = 'none';
+  document.getElementById('rp-wrap').style.display  = 'none';
+  updateLearnProg(); updateHdrBtns(); setMapForLearn();
+}
+
+// ══════════════════════════════════
+// LEARN
+// ══════════════════════════════════
+function learnClick(id){
+  if(activeId){
+    const pe=document.getElementById('sp-'+activeId); if(pe){pe.classList.remove('s-active');pe.classList.add('s-visited');}
+    const pl=document.getElementById('lbl-'+activeId); if(pl){pl.classList.remove('lbl-active');pl.classList.add('lbl-show');}
+  }
+  activeId=id; visitedIds.add(id);
+  const el=document.getElementById('sp-'+id); if(el){el.classList.remove('s-default','s-visited');el.classList.add('s-active');}
+  const lbl=document.getElementById('lbl-'+id); if(lbl){lbl.classList.remove('lbl-show');lbl.classList.add('lbl-active');}
+
+  const s=BY_ID[id];
+  document.getElementById('lp-empty').style.display='none';
+  document.getElementById('lp-info').style.display='flex';
+  document.getElementById('lp-emoji').textContent=s.emoji;
+  document.getElementById('lp-name').textContent=s.name;
+  document.getElementById('lp-region').textContent=s.region;
+  document.getElementById('lp-img-nick').textContent=s.shapeNick;
+  document.getElementById('lp-shape').textContent=s.shape;
+  document.getElementById('lp-memory').textContent=s.memory;
+  document.getElementById('lp-fact').textContent=s.fact;
+
+  // Load shape image
+  loadImage(s.imgQuery, document.getElementById('lp-img'), document.getElementById('lp-img-placeholder'));
+
+  updateLearnProg(); updateHdrBtns();
+}
+
+function navState(dir){
+  const ids=STATES.map(s=>s.id); let i=activeId?ids.indexOf(activeId):-1;
+  i=Math.max(0,Math.min(ids.length-1,i+dir)); learnClick(ids[i]);
+}
+
+function updateLearnProg(){
+  const pct=(visitedIds.size/STATES.length)*100;
+  document.getElementById('prog-fill').style.width=pct+'%';
+  document.getElementById('hdr-label').textContent=visitedIds.size+' / '+STATES.length;
+}
+
+function updateHdrBtns(){
+  const inLearn=mode==='learn';
+  document.getElementById('reset-btn').style.display=inLearn&&visitedIds.size>0?'inline-block':'none';
+  document.getElementById('start-quiz-btn').style.display=inLearn&&visitedIds.size>=3&&!isCoolingDown()?'inline-block':'none';
+}
+
+function resetLearn(){
+  visitedIds.clear(); activeId=null;
+  document.querySelectorAll('.state-path').forEach(el=>{ el.className='state-path s-default'; });
+  document.querySelectorAll('.state-label').forEach(el=>{ el.classList.remove('lbl-show','lbl-active'); });
+  document.getElementById('lp-empty').style.display='';
+  document.getElementById('lp-info').style.display='none';
+  updateLearnProg(); updateHdrBtns();
+}
+
+function setMapForLearn(){
+  document.querySelectorAll('.state-path').forEach(el=>{
+    const sid=el.id.replace('sp-','');
+    el.classList.remove('s-active','q-idle','q-correct','q-wrong','q-revealed','r-correct','r-wrong','r-idle');
+    if(sid===activeId) el.classList.add('s-active');
+    else if(visitedIds.has(sid)) el.classList.add('s-visited');
+    else el.classList.add('s-default');
+  });
+  document.querySelectorAll('.state-label').forEach(el=>{
+    const sid=el.id.replace('lbl-','');
+    el.classList.remove('lbl-active','lbl-show');
+    if(sid===activeId) el.classList.add('lbl-active');
+    else if(visitedIds.has(sid)) el.classList.add('lbl-show');
+  });
+}
+
+// ══════════════════════════════════
+// QUIZ
+// ══════════════════════════════════
+function launchQuiz(){
+  if(isCoolingDown()) return;
+  mode='quiz';
+  quizList=[...STATES].sort(()=>Math.random()-0.5);
+  qIdx=0; score=0; missedIds=[]; qAnswered=false;
+  document.getElementById('btn-learn').classList.remove('active');
+  document.getElementById('btn-quiz').classList.add('active');
+  document.getElementById('lp-empty').style.display='none';
+  document.getElementById('lp-info').style.display='none';
+  document.getElementById('qp-wrap').style.display='flex';
+  document.getElementById('rp-wrap').style.display='none';
+  document.getElementById('start-quiz-btn').style.display='none';
+  document.getElementById('reset-btn').style.display='none';
+  document.querySelectorAll('.state-path').forEach(el=>{ el.className='state-path q-idle'; });
+  document.querySelectorAll('.state-label').forEach(el=>{ el.classList.remove('lbl-active','lbl-show'); });
+  renderQ();
+}
+
+function renderQ(){
+  if(qIdx>=quizList.length){ showResults(); return; }
+  qAnswered=false;
+  const s=quizList[qIdx];
+  document.getElementById('qp-count').textContent='State '+(qIdx+1)+' of '+quizList.length;
+  document.getElementById('qp-name').textContent=s.name;
+  document.getElementById('qp-feedback').textContent='';
+  document.getElementById('qp-feedback').className='';
+  document.getElementById('qp-next').style.display='none';
+
+  // Reset hint
+  document.getElementById('hint-btn').style.display='block';
+  document.getElementById('hint-btn').textContent='💡 Need a hint? Show the shape!';
+  const hr=document.getElementById('hint-reveal'); hr.style.display='none';
+  const hi=document.getElementById('hint-img'); hi.style.display='none'; hi.src='';
+  document.getElementById('hint-placeholder').style.display='block';
+  document.getElementById('hint-label').textContent='';
+
+  document.querySelectorAll('.state-path').forEach(el=>{
+    if(!el.classList.contains('q-correct')&&!el.classList.contains('q-wrong')&&!el.classList.contains('q-revealed')){
+      el.classList.remove('q-idle'); el.classList.add('q-idle');
+    }
+  });
+
+  const pct=(qIdx/quizList.length)*100;
+  document.getElementById('prog-fill').style.width=pct+'%';
+  document.getElementById('hdr-label').textContent='Q '+(qIdx+1)+' / '+quizList.length;
+}
+
+function showHint(){
+  const s=quizList[qIdx];
+  document.getElementById('hint-btn').style.display='none';
+  const hr=document.getElementById('hint-reveal');
+  hr.style.display='flex'; hr.style.flexDirection='column';
+  document.getElementById('hint-label').textContent=s.shapeNick+' '+s.emoji;
+  // Load image
+  loadImage(s.imgQuery, document.getElementById('hint-img'), document.getElementById('hint-placeholder'));
+}
+
+function quizClick(id){
+  if(qAnswered) return;
+  qAnswered=true;
+  const s=quizList[qIdx]; const ok=id===s.id;
+  const clicked=document.getElementById('sp-'+id);
+  const target=document.getElementById('sp-'+s.id);
+  const tlbl=document.getElementById('lbl-'+s.id);
+  if(ok){
+    score++;
+    clicked.classList.remove('q-idle'); clicked.classList.add('q-correct');
+    setFB('🎉 Yes! That\'s '+s.name+'!','fb-c');
+  } else {
+    clicked.classList.remove('q-idle'); clicked.classList.add('q-wrong');
+    target.classList.remove('q-idle'); target.classList.add('q-revealed');
+    setFB('❌ That\'s '+BY_ID[id].name+'. '+s.name+' is shown above.','fb-w');
+    if(!missedIds.includes(s.id)) missedIds.push(s.id);
+  }
+  if(tlbl) tlbl.classList.add('lbl-show');
+  document.getElementById('qp-next').style.display='block';
+  qIdx++;
+}
+
+function setFB(msg,cls){ const el=document.getElementById('qp-feedback'); el.textContent=msg; el.className=cls; }
+function nextQ(){ renderQ(); }
+
+// ══════════════════════════════════
+// RESULTS
+// ══════════════════════════════════
+function showResults(){
+  mode='results';
+  document.getElementById('qp-wrap').style.display='none';
+  document.getElementById('rp-wrap').style.display='flex';
+  document.querySelectorAll('.state-path').forEach(el=>{
+    const sid=el.id.replace('sp-','');
+    el.classList.remove('q-idle','q-correct','q-wrong','q-revealed');
+    el.classList.add(missedIds.includes(sid)?'r-wrong':'r-correct');
+  });
+  const total=quizList.length; const pct=Math.round((score/total)*100);
+  let ico,title,msg,color;
+  if(pct===100)  {ico='🏆';title='PERFECT!';      msg='You found every single state! You are a map master!';             color='linear-gradient(135deg,#f7c948,#f39c12)';}
+  else if(pct>=80){ico='🌟';title='Amazing!';      msg='Great job! Check the red states and try again for 100%!';          color='linear-gradient(135deg,#3ddc84,#27ae60)';}
+  else if(pct>=60){ico='👍';title='Good Work!';    msg='Getting there! Review the red states and try again!';              color='linear-gradient(135deg,#4da6ff,#2980b9)';}
+  else            {ico='💪';title='Keep Going!';   msg='Don\'t give up! Review the shape tricks and try again!';           color='linear-gradient(135deg,#ff5c5c,#c0392b)';}
+  document.getElementById('rp-emoji').textContent=ico;
+  document.getElementById('rp-title').textContent=title;
+  document.getElementById('rp-n').textContent=score;
+  document.getElementById('rp-d').textContent='out of '+total;
+  document.getElementById('rp-score').style.background=color;
+  document.getElementById('rp-msg').textContent=msg;
+  document.getElementById('prog-fill').style.width='100%';
+  document.getElementById('hdr-label').textContent=score+'/'+total+' ✓';
+  document.getElementById('rp-retake').disabled=isCoolingDown();
+  const ms=document.getElementById('rp-missed');
+  if(missedIds.length>0){
+    ms.innerHTML='<h4>📌 Click to review missed states:</h4><div class="rp-chips">'+
+      missedIds.map(id=>{const s=BY_ID[id];return`<span class="rp-chip" onclick="reviewMissed('${id}')">${s.emoji} ${s.name}</span>`;}).join('')+'</div>';
+  } else ms.innerHTML='';
+}
+
+function reviewMissed(id){ backToLearnNoCD(); learnClick(id); }
+
+// ══════════════════════════════════
+// BACK TO LEARN
+// ══════════════════════════════════
+function backToLearnFromQuiz(){ startCooldown(); showLearn(); }
+function backToLearnFromResults(){ startCooldown(); showLearn(); }
+function backToLearnNoCD(){ showLearn(); }
+
+// ══════════════════════════════════
+// COOLDOWN
+// ══════════════════════════════════
+function startCooldown(){
+  cdEnd=Date.now()+COOLDOWN*1000;
+  document.getElementById('cooldown-bar').style.display='flex';
+  document.getElementById('start-quiz-btn').style.display='none';
+  const rb=document.getElementById('rp-retake'); if(rb) rb.disabled=true;
+  if(cdInt) clearInterval(cdInt);
+  cdInt=setInterval(()=>{
+    const left=Math.max(0,Math.ceil((cdEnd-Date.now())/1000));
+    const m=Math.floor(left/60),s=left%60;
+    document.getElementById('cd-timer').textContent=m+':'+String(s).padStart(2,'0');
+    if(left<=0){
+      clearInterval(cdInt); cdInt=null; cdEnd=null;
+      document.getElementById('cooldown-bar').style.display='none';
+      updateHdrBtns();
+      const rb2=document.getElementById('rp-retake'); if(rb2) rb2.disabled=false;
+    }
+  },500);
+}
+function isCoolingDown(){ return cdEnd!==null&&Date.now()<cdEnd; }
+
+// ══════════════════════════════════
+// START
+// ══════════════════════════════════
+initMap();
+</script>
+</body>
+</html>
