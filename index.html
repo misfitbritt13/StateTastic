@@ -1,0 +1,820 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>State-tastic! Learn All 50 States</title>
+<link href="https://fonts.googleapis.com/css2?family=Fredoka+One&family=Nunito:wght@400;600;700;800&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --sky: #3BAFDA;
+    --sun: #F7C948;
+    --grass: #2ECC71;
+    --earth: #E74C3C;
+    --purple: #9B59B6;
+    --navy: #1a2a4a;
+    --card: #fffef7;
+    --shadow: 0 4px 20px rgba(0,0,0,0.12);
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body {
+    font-family: 'Nunito', sans-serif;
+    background: linear-gradient(160deg, #e8f4f8 0%, #fef9e7 100%);
+    min-height: 100vh;
+    color: var(--navy);
+  }
+
+  /* HEADER */
+  header {
+    background: linear-gradient(135deg, var(--sky), #2980b9);
+    padding: 18px 30px;
+    display: flex; align-items: center; justify-content: space-between;
+    box-shadow: 0 4px 15px rgba(0,0,0,0.2);
+    position: sticky; top: 0; z-index: 100;
+  }
+  header h1 {
+    font-family: 'Fredoka One', cursive;
+    font-size: 2rem; color: white;
+    text-shadow: 2px 2px 0 rgba(0,0,0,0.2);
+    letter-spacing: 1px;
+  }
+  header h1 span { color: var(--sun); }
+  #progress-bar-wrap {
+    flex: 1; max-width: 320px; margin: 0 24px;
+    background: rgba(255,255,255,0.25);
+    border-radius: 20px; height: 14px; overflow: hidden;
+  }
+  #progress-bar {
+    height: 100%; border-radius: 20px;
+    background: linear-gradient(90deg, var(--sun), #f39c12);
+    transition: width 0.5s ease;
+    width: 0%;
+  }
+  #progress-label { color: white; font-weight: 800; font-size: 0.85rem; white-space: nowrap; }
+
+  /* SCREENS */
+  .screen { display: none; padding: 30px 20px; max-width: 860px; margin: 0 auto; }
+  .screen.active { display: block; animation: fadeIn 0.4s ease; }
+  @keyframes fadeIn { from { opacity: 0; transform: translateY(14px); } to { opacity: 1; transform: translateY(0); } }
+
+  /* WELCOME SCREEN */
+  #welcome-screen { text-align: center; padding-top: 60px; }
+  #welcome-screen h2 {
+    font-family: 'Fredoka One', cursive;
+    font-size: 3rem; color: var(--navy);
+    line-height: 1.1; margin-bottom: 12px;
+  }
+  #welcome-screen h2 span { color: var(--earth); }
+  #welcome-screen p { font-size: 1.1rem; color: #555; max-width: 540px; margin: 0 auto 30px; line-height: 1.6; }
+  .big-map-emoji { font-size: 5rem; margin-bottom: 10px; display: block; }
+
+  /* BUTTONS */
+  .btn {
+    display: inline-block; padding: 14px 36px;
+    border: none; border-radius: 50px; cursor: pointer;
+    font-family: 'Fredoka One', cursive; font-size: 1.2rem;
+    transition: transform 0.15s, box-shadow 0.15s;
+    text-decoration: none; user-select: none;
+  }
+  .btn:hover { transform: translateY(-3px); box-shadow: 0 8px 20px rgba(0,0,0,0.18); }
+  .btn:active { transform: translateY(0); }
+  .btn-primary { background: var(--earth); color: white; box-shadow: 0 4px 12px rgba(231,76,60,0.3); }
+  .btn-green  { background: var(--grass); color: white; box-shadow: 0 4px 12px rgba(46,204,113,0.3); }
+  .btn-yellow { background: var(--sun); color: var(--navy); box-shadow: 0 4px 12px rgba(247,201,72,0.3); }
+  .btn-sky    { background: var(--sky); color: white; box-shadow: 0 4px 12px rgba(59,175,218,0.3); }
+  .btn-purple { background: var(--purple); color: white; box-shadow: 0 4px 12px rgba(155,89,182,0.3); }
+  .btn-sm { padding: 8px 20px; font-size: 0.95rem; }
+
+  /* LEARN SCREEN */
+  #learn-screen { max-width: 740px; }
+  .state-nav {
+    display: flex; align-items: center; justify-content: space-between;
+    margin-bottom: 22px; gap: 12px;
+  }
+  .state-nav button { flex-shrink: 0; }
+  .state-counter {
+    font-family: 'Fredoka One', cursive; font-size: 1rem;
+    color: #888; text-align: center; flex: 1;
+  }
+
+  .state-card {
+    background: var(--card);
+    border-radius: 24px;
+    box-shadow: var(--shadow);
+    padding: 32px 36px;
+    position: relative;
+    overflow: hidden;
+    border-top: 6px solid var(--sky);
+  }
+  .state-card::before {
+    content: '';
+    position: absolute; top: 0; right: 0;
+    width: 120px; height: 120px;
+    background: radial-gradient(circle, rgba(59,175,218,0.08) 0%, transparent 70%);
+    border-radius: 50%;
+  }
+
+  .region-tag {
+    display: inline-block; padding: 4px 14px;
+    border-radius: 20px; font-size: 0.78rem; font-weight: 800;
+    text-transform: uppercase; letter-spacing: 1px;
+    margin-bottom: 14px;
+  }
+  .West      { background: #daf0fb; color: #1a7a9e; }
+  .Southwest { background: #fde8d0; color: #b85c1a; }
+  .Midwest   { background: #d5f5e3; color: #1a7a4a; }
+  .South     { background: #fde8e8; color: #a01a1a; }
+  .Northeast { background: #e8d5f5; color: #5a1a9e; }
+
+  .state-header {
+    display: flex; align-items: flex-start; gap: 20px;
+    margin-bottom: 20px;
+  }
+  .state-emoji { font-size: 4rem; flex-shrink: 0; }
+  .state-title { flex: 1; }
+  .state-title h2 {
+    font-family: 'Fredoka One', cursive;
+    font-size: 2.2rem; color: var(--navy);
+    line-height: 1; margin-bottom: 4px;
+  }
+  .state-capital {
+    font-size: 0.95rem; color: #888; font-weight: 600;
+  }
+  .state-capital strong { color: var(--sky); }
+  .state-number {
+    font-family: 'Fredoka One', cursive;
+    font-size: 1.1rem; color: #ccc;
+    position: absolute; top: 24px; right: 30px;
+  }
+
+  /* SECTIONS inside card */
+  .info-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; margin-bottom: 20px; }
+  @media (max-width: 500px) { .info-grid { grid-template-columns: 1fr; } }
+
+  .info-box {
+    background: #f8f8f0;
+    border-radius: 14px; padding: 14px 16px;
+  }
+  .info-box .label {
+    font-size: 0.72rem; text-transform: uppercase;
+    letter-spacing: 1px; font-weight: 800; color: #aaa;
+    margin-bottom: 4px;
+  }
+  .info-box .value { font-size: 0.98rem; font-weight: 700; color: var(--navy); }
+
+  .memory-trick {
+    background: linear-gradient(135deg, #fffde7, #fff9c4);
+    border-left: 5px solid var(--sun);
+    border-radius: 14px;
+    padding: 16px 20px;
+    margin-bottom: 14px;
+  }
+  .memory-trick .mtlabel {
+    font-size: 0.75rem; text-transform: uppercase;
+    letter-spacing: 1px; font-weight: 800; color: #b8860b;
+    margin-bottom: 6px;
+  }
+  .memory-trick .mtlabel::before { content: '🧠 '; }
+  .memory-trick p { font-size: 1rem; font-weight: 600; color: #555; line-height: 1.5; }
+
+  .fun-fact {
+    background: linear-gradient(135deg, #e8f8ff, #d1eff9);
+    border-left: 5px solid var(--sky);
+    border-radius: 14px;
+    padding: 16px 20px;
+  }
+  .fun-fact .fflabel {
+    font-size: 0.75rem; text-transform: uppercase;
+    letter-spacing: 1px; font-weight: 800; color: #1a7a9e;
+    margin-bottom: 6px;
+  }
+  .fun-fact .fflabel::before { content: '⚡ '; }
+  .fun-fact p { font-size: 0.95rem; color: #444; line-height: 1.5; }
+
+  /* QUIZ SCREEN */
+  #quiz-screen { max-width: 720px; text-align: center; }
+  #quiz-screen h2 {
+    font-family: 'Fredoka One', cursive;
+    font-size: 2rem; margin-bottom: 6px;
+  }
+  #quiz-progress { color: #888; font-weight: 700; margin-bottom: 24px; }
+
+  .quiz-card {
+    background: white;
+    border-radius: 22px;
+    box-shadow: var(--shadow);
+    padding: 32px 28px;
+    margin-bottom: 20px;
+    text-align: left;
+  }
+  .quiz-question {
+    font-family: 'Fredoka One', cursive;
+    font-size: 1.35rem; color: var(--navy);
+    margin-bottom: 20px; line-height: 1.3;
+  }
+  .quiz-hint {
+    background: #fffde7; border-left: 4px solid var(--sun);
+    border-radius: 10px; padding: 10px 14px;
+    font-size: 0.88rem; color: #888; margin-bottom: 18px;
+    font-weight: 600;
+  }
+  .quiz-hint::before { content: '💡 Hint: '; color: #b8860b; }
+
+  .options { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+  @media (max-width: 480px) { .options { grid-template-columns: 1fr; } }
+
+  .option-btn {
+    background: #f5f5f0;
+    border: 2.5px solid transparent;
+    border-radius: 14px; padding: 14px 16px;
+    font-family: 'Nunito', sans-serif; font-size: 1rem;
+    font-weight: 700; cursor: pointer;
+    text-align: left; transition: all 0.2s;
+    color: var(--navy);
+  }
+  .option-btn:hover:not(:disabled) {
+    border-color: var(--sky); background: #e8f4f8;
+    transform: translateY(-2px);
+  }
+  .option-btn.correct { background: #d5f5e3; border-color: var(--grass); color: #1a7a4a; }
+  .option-btn.wrong   { background: #fde8e8; border-color: var(--earth); color: #a01a1a; }
+  .option-btn:disabled { cursor: default; }
+
+  .feedback-msg {
+    text-align: center; font-family: 'Fredoka One', cursive;
+    font-size: 1.3rem; margin-top: 16px; min-height: 34px;
+    transition: all 0.3s;
+  }
+  .feedback-msg.correct { color: var(--grass); }
+  .feedback-msg.wrong   { color: var(--earth); }
+
+  /* RESULTS SCREEN */
+  #results-screen { text-align: center; }
+  #results-screen h2 {
+    font-family: 'Fredoka One', cursive;
+    font-size: 2.8rem; margin-bottom: 10px;
+  }
+  .score-circle {
+    width: 150px; height: 150px;
+    border-radius: 50%; margin: 20px auto;
+    display: flex; align-items: center; justify-content: center;
+    flex-direction: column;
+    font-family: 'Fredoka One', cursive;
+    box-shadow: 0 8px 30px rgba(0,0,0,0.15);
+  }
+  .score-circle .score-num { font-size: 3rem; line-height: 1; color: white; }
+  .score-circle .score-denom { font-size: 1rem; color: rgba(255,255,255,0.8); }
+
+  #score-msg { font-size: 1.2rem; color: #555; margin-bottom: 24px; max-width: 450px; margin: 0 auto 24px; }
+
+  .missed-section { text-align: left; }
+  .missed-section h3 {
+    font-family: 'Fredoka One', cursive;
+    font-size: 1.3rem; margin-bottom: 14px; color: var(--earth);
+  }
+  .missed-grid { display: flex; flex-wrap: wrap; gap: 10px; margin-bottom: 26px; }
+  .missed-chip {
+    background: white; border: 2px solid #eee;
+    border-radius: 50px; padding: 7px 18px;
+    font-weight: 700; font-size: 0.92rem;
+    cursor: pointer; transition: all 0.2s;
+    color: var(--navy);
+  }
+  .missed-chip:hover { border-color: var(--sky); background: #e8f4f8; transform: scale(1.04); }
+
+  .results-actions { display: flex; gap: 14px; flex-wrap: wrap; justify-content: center; margin-top: 24px; }
+
+  /* REVIEW SCREEN */
+  #review-screen { max-width: 740px; }
+  #review-screen .state-card { border-top-color: var(--purple); }
+</style>
+</head>
+<body>
+
+<header>
+  <h1>State<span>-tastic!</span> 🗺️</h1>
+  <div id="progress-bar-wrap" style="display:none">
+    <div id="progress-bar"></div>
+  </div>
+  <span id="progress-label"></span>
+</header>
+
+<!-- WELCOME -->
+<div id="welcome-screen" class="screen active">
+  <span class="big-map-emoji">🏔️🌊🌾🌵🌲</span>
+  <h2>Learn All <span>50 States</span><br>& Never Forget Them!</h2>
+  <p>Start from California and work all the way to Maine! Each state has a fun <strong>memory trick</strong> to help it stick in your brain. Then take the quiz and see how many you remember!</p>
+  <br>
+  <button class="btn btn-primary" onclick="startLearning()">Start Learning! 🚀</button>
+  &nbsp;
+  <button class="btn btn-sky" onclick="startQuiz()">Jump to Quiz 📝</button>
+</div>
+
+<!-- LEARN -->
+<div id="learn-screen" class="screen">
+  <div class="state-nav">
+    <button class="btn btn-yellow btn-sm" onclick="prevState()">← Back</button>
+    <div class="state-counter" id="state-counter"></div>
+    <button class="btn btn-sky btn-sm" onclick="nextState()">Next →</button>
+  </div>
+  <div id="state-card-area"></div>
+  <div style="text-align:center; margin-top:20px">
+    <button class="btn btn-green" id="quiz-cta" onclick="startQuiz()" style="display:none">
+      I'm Ready for the Quiz! 🎯
+    </button>
+  </div>
+</div>
+
+<!-- QUIZ -->
+<div id="quiz-screen" class="screen">
+  <h2>🎯 State Quiz Time!</h2>
+  <p id="quiz-progress"></p>
+  <div class="quiz-card" id="quiz-card-area"></div>
+  <div id="quiz-feedback" class="feedback-msg"></div>
+  <div style="text-align:center; margin-top:16px">
+    <button class="btn btn-yellow" id="next-q-btn" onclick="nextQuestion()" style="display:none">Next Question →</button>
+  </div>
+</div>
+
+<!-- RESULTS -->
+<div id="results-screen" class="screen">
+  <h2 id="results-emoji">🎉</h2>
+  <h2 id="results-title"></h2>
+  <div class="score-circle" id="score-circle">
+    <span class="score-num" id="score-num"></span>
+    <span class="score-denom" id="score-denom"></span>
+  </div>
+  <p id="score-msg"></p>
+  <div class="missed-section" id="missed-section"></div>
+  <div class="results-actions">
+    <button class="btn btn-primary" onclick="startQuiz()">Retake Whole Quiz 🔄</button>
+    <button class="btn btn-sky" onclick="startLearning()">Review All States 📖</button>
+  </div>
+</div>
+
+<!-- REVIEW SINGLE STATE -->
+<div id="review-screen" class="screen">
+  <div style="margin-bottom:16px">
+    <button class="btn btn-yellow btn-sm" onclick="goBack()">← Back</button>
+  </div>
+  <div id="review-card-area"></div>
+  <div style="text-align:center;margin-top:20px">
+    <button class="btn btn-primary" onclick="startQuiz()">Retake Quiz 🎯</button>
+  </div>
+</div>
+
+<script>
+// ─── STATE DATA ───────────────────────────────────────────────────────────────
+const states = [
+  { name:"California", capital:"Sacramento", region:"West", emoji:"🌴", nickname:"The Golden State",
+    memory:"The state looks like a boot or a right-angle — and with beaches, mountains, and deserts, it's got everything! Think of a HUGE movie set — 'CALI-fornia' sounds like 'CALL me' — it always wants to be on camera! 🎬",
+    fact:"California has the most people of any U.S. state — over 39 million people! That's more than the entire country of Canada!", order:31 },
+  { name:"Oregon", capital:"Salem", region:"West", emoji:"🌲",  nickname:"The Beaver State",
+    memory:"Oregon looks like a rectangle sitting on California. Remember it by 'ORE-gone' — the gold miners went there looking for ORE (gold) and then it was GONE! ⛏️",
+    fact:"Crater Lake in Oregon is the deepest lake in the U.S. — it's so deep you could stack two Empire State Buildings inside it!", order:33 },
+  { name:"Washington", capital:"Olympia", region:"West", emoji:"☕", nickname:"The Evergreen State",
+    memory:"It's at the top-left corner of the country. Washington state makes you think of rainy Seattle and COFFEE ☕ — 'WASH-ington' — all that rain washes everything green!",
+    fact:"Washington state grows more apples than any other state — about 10 billion apples a year!", order:42 },
+  { name:"Nevada", capital:"Carson City", region:"West", emoji:"🎰", nickname:"The Silver State",
+    memory:"Nevada is shaped like a wonky rectangle with a bite taken out of the top left. Think: 'nuh-VAH-duh' — like 'Nevada… I'm gonna go play slots in Las Vegas!' 🎰 Desert + neon lights = Nevada!",
+    fact:"Nevada gets less rain than any other U.S. state — Las Vegas only gets about 4 inches of rain per year!", order:36 },
+  { name:"Idaho", capital:"Boise", region:"West", emoji:"🥔", nickname:"The Gem State",
+    memory:"Idaho is on the right side of Washington/Oregon and looks like someone took a big bite out of the bottom. Easy one: IDAHO = I-DA-HO! Potatoes come from Idaho. Picture a potato wearing cowboy boots! 🤠🥔",
+    fact:"Idaho grows about 1/3 of all the potatoes eaten in the United States!", order:43 },
+  { name:"Montana", capital:"Helena", region:"West", emoji:"🏔️", nickname:"The Treasure State",
+    memory:"Montana is huge and sits above Idaho. 'Montana' comes from the Spanish word for MOUNTAIN ⛰️. Picture Montana as a giant rocky mountain hat on top of Idaho!",
+    fact:"Montana is the 4th biggest state but has fewer people than most cities — there are more cows than people there!", order:41 },
+  { name:"Wyoming", capital:"Cheyenne", region:"West", emoji:"🦬", nickname:"The Equality State",
+    memory:"Wyoming is a perfect rectangle — it's so simple it's BORING. Remember it: 'WHY-oming — WHY did they make it a boring rectangle?' 🟫",
+    fact:"Wyoming was the first place in the U.S. to let women vote — way back in 1869!", order:44 },
+  { name:"Colorado", capital:"Denver", region:"West", emoji:"⛷️", nickname:"The Centennial State",
+    memory:"Colorado is another rectangle but it's below Wyoming. 'COLO-rado' — think COLORFUL! Colorado has the Rocky Mountains with colorful autumn trees and RED rocks. 🎨🏔️",
+    fact:"Colorado has more than 50 mountains that are over 14,000 feet tall — they're called 'fourteeners'!", order:38 },
+  { name:"Utah", capital:"Salt Lake City", region:"West", emoji:"🏜️", nickname:"The Beehive State",
+    memory:"Utah is southwest of Colorado and has a weird notch cut in the top right corner. 'YOU-tah' — sounds like 'YOU-ta know about those cool red rock canyons!' Think of the Arches National Park arch 🌄",
+    fact:"The Great Salt Lake in Utah is so salty that you can float in it without even trying — it's saltier than the ocean!", order:45 },
+  { name:"Arizona", capital:"Phoenix", region:"Southwest", emoji:"🌵", nickname:"The Grand Canyon State",
+    memory:"Arizona is in the bottom-left corner of the Southwest. 'AIR-izona' — the hot DRY AIR in the desert! Plus the GRAND CANYON is there. Think: the canyon looks like a giant A for ARIZONA! 🏜️",
+    fact:"The Grand Canyon is 277 miles long, up to 18 miles wide, and over a mile deep!", order:48 },
+  { name:"New Mexico", capital:"Santa Fe", region:"Southwest", emoji:"🌶️", nickname:"The Land of Enchantment",
+    memory:"New Mexico is next to Arizona. Think: NEW... MEXICO — it's like Mexico but newer? 😄 It's full of spicy food, adobe houses, and deserts. 'Santa Fe' sounds like SANTA + FE(iesta) — a Christmas fiesta! 🎄",
+    fact:"New Mexico has more PhD scientists per person than any other state — lots of space and science research happens there!", order:47 },
+  { name:"North Dakota", capital:"Bismarck", region:"Midwest", emoji:"🌾", nickname:"The Peace Garden State",
+    memory:"The TOP of the two Dakotas. 'NORTH is on TOP' — just like North is up on a map. Picture a huge flat field of wheat — 'Dak-OAT-a' has OAT in it — oat fields everywhere! 🌾",
+    fact:"North Dakota grows more sunflowers than any other state in the U.S.!", order:39 },
+  { name:"South Dakota", capital:"Pierre", region:"Midwest", emoji:"🗿", nickname:"The Mount Rushmore State",
+    memory:"The BOTTOM of the two Dakotas. Easy: South is on the BOTTOM. Famous for Mount Rushmore — four giant president faces carved into a mountain! 'SOUTH-Dakot-A' — A for Abraham Lincoln is there! 👨‍💼",
+    fact:"Mount Rushmore took 14 years to carve and 400 workers helped blast it out of the mountain with dynamite!", order:40 },
+  { name:"Nebraska", capital:"Lincoln", region:"Midwest", emoji:"🌽", nickname:"The Cornhusker State",
+    memory:"Nebraska is below South Dakota. 'Nuh-BRASS-ka' — like 'No BRASS key needed to enter the corn fields!' 🌽 It's flat as a pancake with miles and miles of corn.",
+    fact:"Nebraska is one of the flattest states — it's SO flat that on a clear day you can actually see the curve of the Earth!", order:37 },
+  { name:"Kansas", capital:"Topeka", region:"Midwest", emoji:"🌪️", nickname:"The Sunflower State",
+    memory:"Kansas is below Nebraska and shaped like a rectangle. You KNOW Kansas — it's where Dorothy from The Wizard of Oz lived! 'THERE'S NO PLACE LIKE HOME' — Home = KANSAS 🌈🐕",
+    fact:"Kansas is almost exactly in the center of the United States! They even have a monument marking the geographic center.", order:34 },
+  { name:"Oklahoma", capital:"Oklahoma City", region:"South", emoji:"🤠", nickname:"The Sooner State",
+    memory:"Oklahoma is below Kansas and looks like a pan with a handle sticking out to the right. 'OK-lahoma' — OK like OKAY! The panhandle (that stick) looks like a frying pan. 🍳 Also: OKLAHOMA the musical!",
+    fact:"Oklahoma gets more tornadoes per square mile than anywhere else on Earth — it's the heart of 'Tornado Alley'!", order:46 },
+  { name:"Texas", capital:"Austin", region:"South", emoji:"⭐", nickname:"The Lone Star State",
+    memory:"Texas is HUGE and below Oklahoma. Easy: TEXAS is shaped like a boot OR like someone wearing a 10-gallon cowboy hat! 🤠 'Don't mess with TEXAS!' Everything is bigger in Texas!",
+    fact:"Texas is so big that if you drove across it going straight, it would take longer than driving from Chicago to New York City!", order:28 },
+  { name:"Minnesota", capital:"St. Paul", region:"Midwest", emoji:"🍺", nickname:"The North Star State",
+    memory:"Minnesota is in the upper Midwest, above Iowa. 'MINNE-sota' — MINNE sounds like MINI + SODA! Like a mini soda 🥤 — but it's actually famous for 10,000 lakes, not soda!",
+    fact:"Minnesota really does have over 10,000 lakes — it's nicknamed 'The Land of 10,000 Lakes' and it's true!", order:32 },
+  { name:"Iowa", capital:"Des Moines", region:"Midwest", emoji:"🌽", nickname:"The Hawkeye State",
+    memory:"Iowa is below Minnesota. 'I-OW-a' — 'I OWE ya' a corn maze! 🌽 Iowa grows SO much corn. Imagine a giant ear of corn with legs walking through Iowa.",
+    fact:"Iowa grows enough corn in a year to circle the Earth more than 11 times if you laid the ears end to end!", order:29 },
+  { name:"Missouri", capital:"Jefferson City", region:"Midwest", emoji:"🌉", nickname:"The Show-Me State",
+    memory:"Missouri is below Iowa. 'Miz-OOR-ee' — the MIGHTY Missouri River goes through it! St. Louis has the Gateway Arch — the world's tallest arch, like a giant metal rainbow 🌈",
+    fact:"The Gateway Arch in St. Louis is taller than the Statue of Liberty and the Washington Monument!", order:24 },
+  { name:"Wisconsin", capital:"Madison", region:"Midwest", emoji:"🧀", nickname:"The Badger State",
+    memory:"Wisconsin is east of Minnesota and above Illinois. 'Wis-CON-sin' — think CHEESE! Wisconsin makes more cheese than any other state. 'Wis-CONsin — with CONS-tant cheese production!' 🧀",
+    fact:"Wisconsin makes about 3 billion pounds of cheese every year — that's more than any other state!", order:30 },
+  { name:"Michigan", capital:"Lansing", region:"Midwest", emoji:"🚗", nickname:"The Great Lakes State",
+    memory:"Michigan is special — it's in TWO PIECES! It looks like a MITTEN and a boxing glove. 'MICHI-gan' — 'MITCH put on his MITTEN!' 🧤 Home of Detroit and cars — MICH-igan MACHINES!",
+    fact:"Michigan is the only state made of two separate land pieces — the Upper and Lower Peninsula!", order:26 },
+  { name:"Illinois", capital:"Springfield", region:"Midwest", emoji:"🏙️", nickname:"The Prairie State",
+    memory:"Illinois is below Wisconsin. 'Ill-ih-NOY' — the S at the end is SILENT (sneaky!). Chicago is there — think ILL-inois like Chicago has ILL beats 🎵 — and the deep dish pizza is UNREAL!",
+    fact:"Illinois is home to the world's very first skyscraper, built in Chicago in 1885!", order:21 },
+  { name:"Indiana", capital:"Indianapolis", region:"Midwest", emoji:"🏎️", nickname:"The Hoosier State",
+    memory:"Indiana is east of Illinois. 'Indi-ANA' — like Indiana JONES! 🎩 Picture Indiana Jones racing in the Indianapolis 500 car race! INDY = Indianapolis = Indiana!",
+    fact:"The Indianapolis 500 is one of the most famous car races in the world — drivers go around a 2.5-mile oval track 200 times!", order:19 },
+  { name:"Ohio", capital:"Columbus", region:"Midwest", emoji:"🎓", nickname:"The Buckeye State",
+    memory:"Ohio is east of Indiana. 'OH-HI-OH' — it literally says HI in the middle! Wave 👋 Hello Ohio! It's shaped like a heart tilted sideways. 7 U.S. Presidents were born in Ohio!",
+    fact:"More U.S. astronauts have come from Ohio than any other state — including Neil Armstrong, the first man on the moon!", order:17 },
+  { name:"Arkansas", capital:"Little Rock", region:"South", emoji:"💎", nickname:"The Natural State",
+    memory:"Arkansas is below Missouri. Tricky pronunciation: 'AR-kan-SAW' NOT 'Ar-KAN-zas'! The S is silent. Remember: ARK + KANSAS sounds like Kansas, but it's pronounced 'SAW' because they found diamonds there with a SAW! 💎",
+    fact:"Arkansas has the only diamond mine in the world where regular people can dig and keep any diamonds they find!", order:25 },
+  { name:"Louisiana", capital:"Baton Rouge", region:"South", emoji:"🎷", nickname:"The Pelican State",
+    memory:"Louisiana is on the Gulf Coast below Arkansas. 'LOO-ee-zee-ANA' — it was named after King LOUIS of France. Think: LOUIE Louie 🎺 playing jazz in New Orleans. It sticks out into the Gulf like a boot!",
+    fact:"New Orleans in Louisiana is below sea level — the city was actually built lower than the ocean surrounding it!", order:18 },
+  { name:"Mississippi", capital:"Jackson", region:"South", emoji:"🎸", nickname:"The Magnolia State",
+    memory:"Mississippi is west of Alabama and east of Louisiana. Spelling trick: M-I-S-S-I-S-S-I-P-P-I! Count: 1 M, 4 I's, 4 S's, 2 P's! Sing it: 'MISS-ISS-IPPI' like a jump rope song! 🎵",
+    fact:"The Mississippi River — which flows along most of Mississippi's western border — is the 2nd longest river in the whole U.S.!", order:20 },
+  { name:"Alabama", capital:"Montgomery", region:"South", emoji:"🚀", nickname:"The Yellowhammer State",
+    memory:"Alabama is east of Mississippi. 'ALA-bama' — 'ALA! BAM! A rocket!' 🚀 NASA's rocket center is in Huntsville, Alabama. ALA-BAM-A — the BAM is like a rocket BOOM!",
+    fact:"The U.S. Space & Rocket Center in Huntsville, Alabama is the largest space museum in the world!", order:22 },
+  { name:"Tennessee", capital:"Nashville", region:"South", emoji:"🎸", nickname:"The Volunteer State",
+    memory:"Tennessee is above Alabama and looks like a long rectangle. TENN-essee — TENN is like TEN. Count the N's and E's: T-E-N-N-E-S-S-E-E — that's 3 E's and 2 N's and 2 S's! Nashville = country music capital! 🤠🎸",
+    fact:"Tennessee is home to the most visited national park in the U.S. — Great Smoky Mountains National Park!", order:16 },
+  { name:"Kentucky", capital:"Frankfort", region:"South", emoji:"🍗", nickname:"The Bluegrass State",
+    memory:"Kentucky is above Tennessee. Cason's trick works PERFECTLY here: Kentucky looks like a chicken leg 🍗 — and KFC (Kentucky Fried Chicken) started there! 'KEN-tucky' — KENTUCKY FRIED CHICKEN!",
+    fact:"Kentucky is home to Mammoth Cave — the longest known cave system in the entire world, with over 400 miles of explored passages!", order:15 },
+  { name:"West Virginia", capital:"Charleston", region:"South", emoji:"⛰️", nickname:"The Mountain State",
+    memory:"West Virginia is the bumpy-shaped state that broke off from Virginia during the Civil War. 'WEST Virginia' — it's just Virginia but to the WEST. It's SO hilly and mountainous. Remember: 'Country Roads, Take Me Home' — that's about West Virginia! 🎵",
+    fact:"West Virginia is the only U.S. state that was formed by breaking away from another state during the Civil War!", order:35 },
+  { name:"Virginia", capital:"Richmond", region:"South", emoji:"🏛️", nickname:"The Old Dominion",
+    memory:"Virginia is on the East Coast and looks like a messy triangle. 'VIR-jin-ia' — think VIRGIN-ia, brand new and OLD at the same time. 8 U.S. Presidents were born in Virginia — more than ANY other state! 👨‍💼",
+    fact:"Virginia is called 'the birthplace of presidents' — George Washington, Thomas Jefferson, and James Madison were all born there!", order:10 },
+  { name:"North Carolina", capital:"Raleigh", region:"South", emoji:"✈️", nickname:"The Tar Heel State",
+    memory:"North Carolina is the NORTH one of the Carolinas on the East Coast. 'CAROL-ina' — think of someone named CAROL singing 🎵 in the NORTH! The Wright Brothers flew the FIRST AIRPLANE in North Carolina! 'NORTH Carolina — North was the first direction they flew!'",
+    fact:"The Wright Brothers made the world's first successful airplane flight at Kitty Hawk, North Carolina on December 17, 1903!", order:12 },
+  { name:"South Carolina", capital:"Columbia", region:"South", emoji:"🌴", nickname:"The Palmetto State",
+    memory:"South Carolina is below North Carolina. There's a PALM TREE on their flag! 🌴 'SOUTH Carolina — SOUTH means WARM, warm means PALM TREES!' It's the first state to leave the Union before the Civil War.",
+    fact:"South Carolina has more than 2,500 miles of coastline when you count all the inlets and bays!", order:8 },
+  { name:"Georgia", capital:"Atlanta", region:"South", emoji:"🍑", nickname:"The Peach State",
+    memory:"Georgia is below South Carolina. Georgia = PEACHES 🍑! 'GEOR-gia' — sounds like 'GORGEOUS peach!' Also home to Atlanta and Coca-Cola was invented there! 'GEO-COLA? No — but close!' 🥤",
+    fact:"Coca-Cola was invented in Atlanta, Georgia in 1886 by a pharmacist named John Pemberton!", order:4 },
+  { name:"Florida", capital:"Tallahassee", region:"South", emoji:"🏖️", nickname:"The Sunshine State",
+    memory:"Florida is the BOOT that kicks into the ocean — you can't miss it! 'FLORI-da' — FLORIda = FLOwer + RIDA! It sticks down like a finger pointing to Cuba. THEME PARKS, BEACHES, ALLIGATORS! 🐊",
+    fact:"Florida has more lightning strikes than any other state in the U.S. — it's nicknamed the 'Lightning Capital of North America'!", order:27 },
+  { name:"Pennsylvania", capital:"Harrisburg", region:"Northeast", emoji:"🔔", nickname:"The Keystone State",
+    memory:"Pennsylvania is a big rectangle on the East Coast. 'Penn-syl-VANIA' — Penn like a PEN ✏️! William Penn founded it. The Liberty Bell is in Philadelphia! 'PENN wrote the rules with a PEN — VANIA sounds likeVANIA-lla — Liberty Bell rings at dinnertime!' 🔔",
+    fact:"The Liberty Bell in Philadelphia has a famous crack — nobody knows exactly how or when it got cracked!", order:2 },
+  { name:"New York", capital:"Albany", region:"Northeast", emoji:"🗽", nickname:"The Empire State",
+    memory:"New York is in the Northeast. New York City is the most famous city in America — Statue of Liberty, Times Square, Empire State Building! 'NEW YORK, NEW YORK — if you can make it there, you can make it anywhere!' 🗽",
+    fact:"New York City's subway system has 472 stations — more than any other subway system in the world!", order:11 },
+  { name:"New Jersey", capital:"Trenton", region:"Northeast", emoji:"🏙️", nickname:"The Garden State",
+    memory:"New Jersey is the little state right next to New York City. 'NEW JER-sey' — it's like they needed a new JERSEY to wear after moving from England 👕. Many people who work in New York City actually live in New Jersey!",
+    fact:"New Jersey is the most densely populated state in the U.S. — it has more people per square mile than any other state!", order:3 },
+  { name:"Delaware", capital:"Dover", region:"Northeast", emoji:"🦅", nickname:"The First State",
+    memory:"Delaware is the tiny state south of New Jersey. It's SO small — one of the smallest states! 'DELA-ware' — 'DELA, are you AWARE Delaware is tiny?' 🔎 It was the FIRST state to join the United States — #1!",
+    fact:"Delaware was the very first state to ratify the U.S. Constitution, on December 7, 1787 — that's why it's called 'The First State'!", order:1 },
+  { name:"Maryland", capital:"Annapolis", region:"Northeast", emoji:"🦀", nickname:"The Old Line State",
+    memory:"Maryland is around Washington D.C. on the East Coast and has a weird shape. 'MARY-land' — imagine MARY having a LAND with blue crabs 🦀! Maryland is FAMOUS for blue crabs. Mary + Land = Maryland — MARY had a little crab!",
+    fact:"Maryland blue crabs are so famous that crab cakes are the state's official dish — people travel from all over just to eat them!", order:7 },
+  { name:"Connecticut", capital:"Hartford", region:"Northeast", emoji:"⚓", nickname:"The Constitution State",
+    memory:"Connecticut is a small rectangle in New England. Tricky spelling: CON-NECT-I-CUT — it literally has the word CONNECT in it! 'CONNECT-icut CONNECTS New York to Boston.' The CT at the end is silent! 'kuh-NET-ih-cut'",
+    fact:"Connecticut is where the first American-style hamburger was created and sold, in New Haven, in 1900!", order:5 },
+  { name:"Rhode Island", capital:"Providence", region:"Northeast", emoji:"🏝️", nickname:"The Ocean State",
+    memory:"Rhode Island is the tiniest state in the whole USA! 'RHODE Island' — it's barely bigger than a ROAD! 🛣️ Despite its name, it's mostly not an island! Rhode Island sounds fancy — like a small DIAMOND 💎 hidden in New England.",
+    fact:"Rhode Island is the smallest state — you could fit it inside Alaska over 425 times!", order:13 },
+  { name:"Massachusetts", capital:"Boston", region:"Northeast", emoji:"🦞", nickname:"The Bay State",
+    memory:"Massachusetts is on the East Coast above Rhode Island. Tricky to spell! 'MASSA-choo-SETS' — like you have MASSES of SETS of choo-choo trains 🚂? Actually easier: think THE PILGRIMS landed in Massachusetts! Plymouth Rock! 🪨",
+    fact:"Harvard University in Massachusetts, founded in 1636, is the oldest university in the United States!", order:6 },
+  { name:"Vermont", capital:"Montpelier", region:"Northeast", emoji:"🍁", nickname:"The Green Mountain State",
+    memory:"Vermont is skinny and in the top-left of New England. 'VER-mont' — VER sounds like VERY, mont means MOUNTAIN in French! 'VERY MOUNTAIN-y Vermont!' 🏔️🍁 Famous for maple syrup — VERmont MAPLE syrup — VERY YUMMY!",
+    fact:"Vermont produces more maple syrup than any other U.S. state — about 2 million gallons every year!", order:14 },
+  { name:"New Hampshire", capital:"Concord", region:"Northeast", emoji:"⛰️", nickname:"The Granite State",
+    memory:"New Hampshire is a thin state next to Vermont. 'NEW HAMP-shire' — like a NEW HAMSTER from a shire! 🐹 Think of a cute hamster on granite rocks. New Hampshire's motto is 'Live Free or Die' — the most intense state motto ever! 💪",
+    fact:"New Hampshire's Mount Washington once recorded the highest wind speed ever on Earth's surface — 231 miles per hour in 1934!", order:9 },
+  { name:"Maine", capital:"Augusta", region:"Northeast", emoji:"🦞", nickname:"The Pine Tree State",
+    memory:"Maine is the LAST state we visit — the furthest northeast! 'MAINE' — it's the MAIN event! 🎉 The MAIN point of the trip! Maine looks like a mitten with a bite taken out. Famous for lobster! 🦞 'MAINE lobster is the MAIN dish!'",
+    fact:"Maine produces about 90% of all the lobsters caught in the United States — lobstering is a huge part of Maine's culture!", order:23 },
+];
+
+// ─── STATE ────────────────────────────────────────────────────────────────────
+let currentIdx = 0;
+let quizQuestions = [];
+let currentQ = 0;
+let score = 0;
+let missedStates = [];
+let answeredInLearn = new Set();
+let prevScreen = '';
+
+function showScreen(id) {
+  document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
+  document.getElementById(id).classList.add('active');
+
+  const wrap = document.getElementById('progress-bar-wrap');
+  const lbl = document.getElementById('progress-label');
+  if (id === 'learn-screen') {
+    wrap.style.display = 'flex';
+    updateProgressBar();
+  } else if (id === 'quiz-screen') {
+    wrap.style.display = 'flex';
+    updateQuizProgressBar();
+  } else {
+    wrap.style.display = 'none';
+    lbl.textContent = '';
+  }
+}
+
+function updateProgressBar() {
+  const pct = Math.round(((currentIdx + 1) / states.length) * 100);
+  document.getElementById('progress-bar').style.width = pct + '%';
+  document.getElementById('progress-label').textContent = `${currentIdx + 1} / ${states.length}`;
+}
+
+function updateQuizProgressBar() {
+  const pct = Math.round(((currentQ) / quizQuestions.length) * 100);
+  document.getElementById('progress-bar').style.width = pct + '%';
+  document.getElementById('progress-label').textContent = `Q ${Math.min(currentQ + 1, quizQuestions.length)} / ${quizQuestions.length}`;
+}
+
+// ─── LEARN ────────────────────────────────────────────────────────────────────
+function startLearning(idx) {
+  currentIdx = idx !== undefined ? idx : 0;
+  showScreen('learn-screen');
+  renderStateCard();
+}
+
+function renderStateCard() {
+  const s = states[currentIdx];
+  answeredInLearn.add(currentIdx);
+  updateProgressBar();
+
+  const showQuizBtn = answeredInLearn.size >= 5;
+  document.getElementById('quiz-cta').style.display = showQuizBtn ? 'inline-block' : 'none';
+  document.getElementById('state-counter').textContent = `State ${currentIdx + 1} of ${states.length}`;
+
+  document.getElementById('state-card-area').innerHTML = `
+    <div class="state-card">
+      <span class="state-number">#${s.order}</span>
+      <span class="region-tag ${s.region.replace(' ', '')}">${s.region}</span>
+      <div class="state-header">
+        <span class="state-emoji">${s.emoji}</span>
+        <div class="state-title">
+          <h2>${s.name}</h2>
+          <div class="state-capital">Capital: <strong>${s.capital}</strong></div>
+        </div>
+      </div>
+      <div class="info-grid">
+        <div class="info-box">
+          <div class="label">Nickname</div>
+          <div class="value">${s.nickname}</div>
+        </div>
+        <div class="info-box">
+          <div class="label">Region</div>
+          <div class="value">${s.region}</div>
+        </div>
+      </div>
+      <div class="memory-trick">
+        <div class="mtlabel">Memory Trick</div>
+        <p>${s.memory}</p>
+      </div>
+      <div class="fun-fact">
+        <div class="fflabel">Wow Fact!</div>
+        <p>${s.fact}</p>
+      </div>
+    </div>
+  `;
+}
+
+function nextState() {
+  if (currentIdx < states.length - 1) {
+    currentIdx++;
+    renderStateCard();
+  } else {
+    document.getElementById('quiz-cta').style.display = 'inline-block';
+    document.getElementById('quiz-cta').textContent = "You've seen them all! Take the Quiz! 🎯";
+  }
+}
+
+function prevState() {
+  if (currentIdx > 0) {
+    currentIdx--;
+    renderStateCard();
+  } else {
+    showScreen('welcome-screen');
+  }
+}
+
+// ─── QUIZ ─────────────────────────────────────────────────────────────────────
+function buildQuestions() {
+  // Mix of: capital quiz, memory trick fill, region quiz
+  const qs = [];
+  const shuffled = [...states].sort(() => Math.random() - 0.5);
+
+  shuffled.forEach((s, i) => {
+    const type = i % 3;
+    if (type === 0) {
+      // What is the capital?
+      const wrong = states.filter(x => x.name !== s.name)
+        .sort(() => Math.random() - 0.5).slice(0, 3).map(x => x.capital);
+      const opts = shuffle([s.capital, ...wrong]);
+      qs.push({
+        q: `What is the capital of ${s.name}?`,
+        hint: s.memory.split('!')[0] + '!',
+        answer: s.capital,
+        options: opts,
+        stateName: s.name
+      });
+    } else if (type === 1) {
+      // Which state has this capital?
+      const wrong = states.filter(x => x.name !== s.name)
+        .sort(() => Math.random() - 0.5).slice(0, 3).map(x => x.name);
+      const opts = shuffle([s.name, ...wrong]);
+      qs.push({
+        q: `The capital city ${s.capital} belongs to which state?`,
+        hint: `This state is in the ${s.region} region. ${s.emoji}`,
+        answer: s.name,
+        options: opts,
+        stateName: s.name
+      });
+    } else {
+      // What region is this state in?
+      const regions = ['West', 'Southwest', 'Midwest', 'South', 'Northeast'];
+      const wrongR = regions.filter(r => r !== s.region).sort(() => Math.random() - 0.5).slice(0, 3);
+      const opts = shuffle([s.region, ...wrongR]);
+      qs.push({
+        q: `Which region of the U.S. is ${s.name} in?`,
+        hint: `${s.name}'s nickname is "${s.nickname}". ${s.emoji}`,
+        answer: s.region,
+        options: opts,
+        stateName: s.name
+      });
+    }
+  });
+
+  return qs;
+}
+
+function shuffle(arr) { return arr.sort(() => Math.random() - 0.5); }
+
+function startQuiz(filtered) {
+  prevScreen = 'quiz';
+  quizQuestions = filtered || buildQuestions();
+  currentQ = 0; score = 0; missedStates = [];
+  showScreen('quiz-screen');
+  renderQuestion();
+}
+
+function renderQuestion() {
+  if (currentQ >= quizQuestions.length) { showResults(); return; }
+  updateQuizProgressBar();
+
+  const q = quizQuestions[currentQ];
+  document.getElementById('quiz-progress').textContent = `Question ${currentQ + 1} of ${quizQuestions.length}`;
+  document.getElementById('quiz-feedback').textContent = '';
+  document.getElementById('quiz-feedback').className = 'feedback-msg';
+  document.getElementById('next-q-btn').style.display = 'none';
+
+  document.getElementById('quiz-card-area').innerHTML = `
+    <div class="quiz-question">${q.q}</div>
+    <div class="quiz-hint">${q.hint}</div>
+    <div class="options" id="options-area">
+      ${q.options.map((opt, i) => `
+        <button class="option-btn" onclick="selectAnswer(this, '${opt.replace(/'/g,"\\'")}')">
+          ${opt}
+        </button>
+      `).join('')}
+    </div>
+  `;
+}
+
+function selectAnswer(btn, chosen) {
+  const q = quizQuestions[currentQ];
+  const correct = chosen === q.answer;
+
+  document.querySelectorAll('.option-btn').forEach(b => {
+    b.disabled = true;
+    if (b.textContent.trim() === q.answer) b.classList.add('correct');
+  });
+
+  if (correct) {
+    score++;
+    btn.classList.add('correct');
+    const msgs = ['🎉 Awesome!', '⭐ Correct!', '🙌 Nice one!', '🔥 You got it!', '💪 Nailed it!'];
+    setFeedback(msgs[Math.floor(Math.random() * msgs.length)], 'correct');
+  } else {
+    btn.classList.add('wrong');
+    setFeedback(`❌ Not quite — the answer was: ${q.answer}`, 'wrong');
+    if (!missedStates.includes(q.stateName)) missedStates.push(q.stateName);
+  }
+
+  document.getElementById('next-q-btn').style.display = 'inline-block';
+  currentQ++;
+}
+
+function setFeedback(msg, cls) {
+  const el = document.getElementById('quiz-feedback');
+  el.textContent = msg; el.className = 'feedback-msg ' + cls;
+}
+
+function nextQuestion() { renderQuestion(); }
+
+// ─── RESULTS ──────────────────────────────────────────────────────────────────
+function showResults() {
+  showScreen('results-screen');
+  const total = quizQuestions.length;
+  const pct = Math.round((score / total) * 100);
+
+  let emoji, title, msg, color;
+  if (pct === 100) {
+    emoji = '🏆'; title = 'PERFECT SCORE!';
+    msg = "WOW! You got every single question right! You are officially a State Superstar! 🌟";
+    color = 'linear-gradient(135deg, #f7c948, #f39c12)';
+  } else if (pct >= 80) {
+    emoji = '🌟'; title = 'Amazing Job!';
+    msg = "You really know your states! Just a few slipped by — review the ones you missed and you'll get 100% next time!";
+    color = 'linear-gradient(135deg, #2ecc71, #27ae60)';
+  } else if (pct >= 60) {
+    emoji = '👍'; title = 'Good Work!';
+    msg = "You're getting there! Click the states you missed below to review their memory tricks, then try again!";
+    color = 'linear-gradient(135deg, #3bafda, #2980b9)';
+  } else {
+    emoji = '💪'; title = 'Keep Practicing!';
+    msg = "Don't give up! Go back and review the memory tricks — they really help! You got this!";
+    color = 'linear-gradient(135deg, #e74c3c, #c0392b)';
+  }
+
+  document.getElementById('results-emoji').textContent = emoji;
+  document.getElementById('results-title').textContent = title;
+  document.getElementById('score-num').textContent = score;
+  document.getElementById('score-denom').textContent = `out of ${total}`;
+  document.getElementById('score-circle').style.background = color;
+  document.getElementById('score-msg').textContent = msg;
+
+  const missedSection = document.getElementById('missed-section');
+  if (missedStates.length > 0) {
+    missedSection.innerHTML = `
+      <h3>📌 Review These States:</h3>
+      <div class="missed-grid">
+        ${missedStates.map(sn => `<button class="missed-chip" onclick="reviewState('${sn}')">🔍 ${sn}</button>`).join('')}
+      </div>
+    `;
+  } else {
+    missedSection.innerHTML = '';
+  }
+}
+
+function reviewState(name) {
+  const idx = states.findIndex(s => s.name === name);
+  if (idx === -1) return;
+  prevScreen = 'results-screen';
+  currentIdx = idx;
+  const card = document.getElementById('review-card-area');
+  const s = states[idx];
+  card.innerHTML = `
+    <div class="state-card">
+      <span class="region-tag ${s.region.replace(' ', '')}">${s.region}</span>
+      <div class="state-header">
+        <span class="state-emoji">${s.emoji}</span>
+        <div class="state-title">
+          <h2>${s.name}</h2>
+          <div class="state-capital">Capital: <strong>${s.capital}</strong></div>
+        </div>
+      </div>
+      <div class="info-grid">
+        <div class="info-box"><div class="label">Nickname</div><div class="value">${s.nickname}</div></div>
+        <div class="info-box"><div class="label">Region</div><div class="value">${s.region}</div></div>
+      </div>
+      <div class="memory-trick">
+        <div class="mtlabel">Memory Trick</div>
+        <p>${s.memory}</p>
+      </div>
+      <div class="fun-fact">
+        <div class="fflabel">Wow Fact!</div>
+        <p>${s.fact}</p>
+      </div>
+    </div>
+  `;
+  showScreen('review-screen');
+}
+
+function goBack() {
+  showScreen(prevScreen || 'results-screen');
+}
+</script>
+</body>
+</html>
